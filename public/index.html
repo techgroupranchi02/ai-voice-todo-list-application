@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Voice Todo List Application</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <i class="fa-solid fa-microphone-lines icon-glow"></i>
+        <span>Voice<span class="highlight">Task</span> AI</span>
+      </div>
+      <div class="user-status" id="userStatus">
+        <button id="authBtn" class="btn btn-outline">
+          <i class="fa-solid fa-user"></i> Login / Register
+        </button>
+      </div>
+    </header>
+
+    <section class="voice-hero">
+      <div class="hero-content">
+        <h2>Speak your tasks into reality</h2>
+        <p>Press the microphone button and say what you need to do.</p>
+      </div>
+
+      <div class="mic-container">
+        <button id="micBtn" class="mic-button" title="Click to record voice task">
+          <i class="fa-solid fa-microphone"></i>
+        </button>
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring delay-1"></div>
+      </div>
+      <div class="mic-status" id="micStatus">Click microphone to speak</div>
+
+      <form id="quickTaskForm" class="quick-form">
+        <div class="input-group">
+          <i class="fa-solid fa-plus input-icon"></i>
+          <input type="text" id="taskTitle" placeholder="Or type a task manually..." required>
+          <select id="taskCategory">
+            <option value="Personal">Personal</option>
+            <option value="Work">Work</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+          <button type="submit" class="btn btn-primary">Add Task</button>
+        </div>
+      </form>
+    </section>
+
+    <main class="main-content">
+      <div class="content-header">
+        <div class="tabs">
+          <button class="tab-btn active" data-filter="all">All Tasks (<span id="countAll">0</span>)</button>
+          <button class="tab-btn" data-filter="pending">Pending (<span id="countPending">0</span>)</button>
+          <button class="tab-btn" data-filter="completed">Completed (<span id="countCompleted">0</span>)</button>
+          <button class="tab-btn" data-filter="voice">Voice Tasks (<span id="countVoice">0</span>)</button>
+        </div>
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Search tasks...">
+        </div>
+      </div>
+
+      <div class="task-grid" id="taskGrid">
+        <div class="empty-state" id="emptyState">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <p>No tasks yet. Speak or type to create your first task!</p>
+        </div>
+      </div>
+    </main>
+
+    <div id="authModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <button id="closeModal" class="close-btn">&times;</button>
+        <div class="modal-header">
+          <h3 id="modalTitle">Login</h3>
+          <p>Access your AI Voice tasks from any device</p>
+        </div>
+        <form id="authForm">
+          <div class="form-group" id="nameGroup" style="display: none;">
+            <label>First Name</label>
+            <input type="text" id="firstName" placeholder="John">
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="email" placeholder="user@example.com" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+          <button type="submit" id="authSubmitBtn" class="btn btn-primary btn-full">Login</button>
+        </form>
+        <div class="modal-footer">
+          <span id="toggleAuthText">Don't have an account?</span>
+          <a href="#" id="toggleAuthLink">Register</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

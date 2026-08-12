@@ -1,25 +1,23 @@
-// src/tasks/dto/create-task.dto.ts
-import { IsNotEmpty, IsOptional, IsString, IsDate, IsEnum } from 'class-validator';
-import { Priority } from '../task.entity';
+import { IsString, IsNotEmpty, IsOptional, IsDate } from 'class-validator';
 
 export class CreateTaskDto {
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
   title: string;
 
-  @IsOptional()
   @IsString()
+  @IsOptional()
   description?: string;
 
-  @IsOptional()
   @IsDate()
+  @IsOptional()
   dueDate?: Date;
 
-  @IsOptional()
-  @IsEnum(Priority)
-  priority?: Priority;
-
-  @IsOptional()
   @IsString()
+  @IsOptional()
+  priority?: string;
+
+  @IsString()
+  @IsOptional()
   category?: string;
 }

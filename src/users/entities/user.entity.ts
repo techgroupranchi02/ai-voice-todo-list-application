@@ -1,0 +1,29 @@
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Task } from '../../tasks/entities/task.entity';
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ length: 255 })
+  firstName: string;
+
+  @Column({ length: 255, nullable: true })
+  lastName: string;
+
+  @Column({ length: 255, unique: true })
+  email: string;
+
+  @Column({ length: 255 })
+  password: string;
+
+  @OneToMany(() => Task, task => task.user)
+  tasks: Task[];
+
+  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
+}

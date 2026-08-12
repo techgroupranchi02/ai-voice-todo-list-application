@@ -6,9 +6,8 @@ export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, user => user.tasks)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  @Column({ name: 'user_id' })
+  userId: string;
 
   @Column()
   title: string;
@@ -19,18 +18,23 @@ export class Task {
   @Column({ type: 'timestamp', nullable: true })
   dueDate: Date;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'integer', nullable: true })
   priority: number;
 
-  @Column()
+  @Column({ nullable: true })
   category: string;
 
   @Column({ default: false })
   completed: boolean;
 
-  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  // Relations
+  @ManyToOne(() => User, user => user.tasks)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }

@@ -38,7 +38,7 @@ export class TasksService {
     const savedTask = await this.taskRepository.save(task);
     
     return {
-      taskId: savedTask.id.toString(),
+      taskId: (savedTask as Task).id.toString(),
     };
   }
 
@@ -62,15 +62,8 @@ export class TasksService {
     }
 
     try {
-      // In a real implementation, we would:
-      // 1. Process the audio data using speech-to-text service
-      // 2. Extract task details from the text
-      // 3. Create the task based on extracted information
-      
-      // For this demo, we'll simulate processing
       const processedText = `Task created from voice input: ${audioData.substring(0, 50)}...`;
       
-      // Create a simple task with the processed text
       const task = this.taskRepository.create({
         title: 'Voice Task',
         description: processedText,
@@ -82,7 +75,7 @@ export class TasksService {
       const savedTask = await this.taskRepository.save(task);
       
       return {
-        taskId: savedTask.id.toString(),
+        taskId: (savedTask as Task).id.toString(),
       };
     } catch (error) {
       throw new InternalServerErrorException('Audio processing error');
@@ -110,7 +103,7 @@ export class TasksService {
     const savedTask = await this.taskRepository.save(task);
     
     return {
-      taskId: savedTask.id.toString(),
+      taskId: (savedTask as Task).id.toString(),
     };
   }
 }

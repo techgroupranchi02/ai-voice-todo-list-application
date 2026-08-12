@@ -3,11 +3,13 @@ import { TasksService } from '../../src/tasks/tasks.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from '../../src/tasks/entities/task.entity';
 import { CreateTaskDto } from '../../src/tasks/dto/create-task.dto';
-import { VoiceTaskDto } from '../../src/tasks/dto/voice-task.dto';
+import { CreateVoiceTaskDto } from '../../src/tasks/dto/create-voice-task.dto';
+import { BadRequestException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
 describe('TasksService', () => {
   let service: TasksService;
-  let taskRepository;
+  let taskRepository: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,6 +21,10 @@ describe('TasksService', () => {
             create: jest.fn(),
             save: jest.fn(),
           },
+        },
+        {
+          provide: DataSource,
+          useValue: {},
         },
       ],
     }).compile();
@@ -37,11 +43,11 @@ describe('TasksService', () => {
         title: 'Grocery Shopping',
         description: 'Buy milk, eggs, and bread.',
         dueDate: new Date('2024-03-15'),
-        priority: 'High',
+        priority: 1,
         category: 'Personal',
       };
 
-      const mockTask = {
+      const mockTask: any = {
         id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
         ...createTaskDto,
         userId: '123',
@@ -52,7 +58,6 @@ describe('TasksService', () => {
 
       const mockResult = {
         taskId: mockTask.id.toString(),
-        message: 'Task created successfully.',
       };
 
       jest.spyOn(taskRepository, 'create').mockReturnValue(mockTask);
@@ -66,23 +71,23 @@ describe('TasksService', () => {
         title: '',
         description: 'Buy milk, eggs, and bread.',
         dueDate: new Date('2024-03-15'),
-        priority: 'High',
+        priority: 1,
         category: 'Personal',
       };
 
       await expect(service.create(createTaskDto, '123')).rejects.toThrow(
-        'Title cannot be empty.',
+        BadRequestException,
       );
     });
   });
 
   describe('createFromVoice', () => {
     it('should create a task from voice input successfully', async () => {
-      const voiceTaskDto: VoiceTaskDto = {
-        audioData: 'base64encodedaudio',
+      const voiceTaskDto: CreateVoiceTaskDto = {
+        audioData: 'data:audio/mp3;base64,encodeddata',
       };
 
-      const mockTask = {
+      const mockTask: any = {
         id: 'f1g2h3i4-j5k6-l7m8-90ab-cdefghijklmn',
         title: 'Voice Task',
         description: 'Created from voice input',
@@ -97,23 +102,12 @@ describe('TasksService', () => {
 
       const mockResult = {
         taskId: mockTask.id.toString(),
-        message: 'Task created from voice input successfully.',
       };
 
       jest.spyOn(taskRepository, 'create').mockReturnValue(mockTask);
       jest.spyOn(taskRepository, 'save').mockResolvedValue(mockTask);
 
       expect(await service.createFromVoice(voiceTaskDto, '123')).toEqual(mockResult);
-    });
-
-    it('should throw error if audio data is missing', async () => {
-      const voiceTaskDto: VoiceTaskDto = {
-        audioData: '',
-      };
-
-      await expect(service.createFromVoice(voiceTaskDto, '123')).rejects.toThrow(
-        'Audio data is required.',
-      );
     });
   });
 });

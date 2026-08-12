@@ -6,25 +6,46 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Logger } from 'nestjs-pino';
 
-@Catch(HttpException)
+@Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
+  constructor(private readonly logger: Logger) {}
+
+  catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const status = exception.getStatus();
+    
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message = 'Internal server error';
+    let errors = undefined;
 
-    const errorResponse = {
-      success: false,
-      statusCode: status,
-      message: exception.message || 'Internal Server Error',
-      timestamp: new Date().toISOString(),
-    };
-
-    if (status === HttpStatus.BAD_REQUEST) {
-      errorResponse.message = exception.message;
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+      
+      if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+        message = (exceptionResponse as any).message || message;
+        errors = (exceptionResponse as any).errors;
+      } else {
+        message = exceptionResponse as string;
+      }
     }
 
-    response.status(status).json(errorResponse);
+    // Log the error
+    this.logger.error({
+      status,
+      message,
+      stack: (exception as any).stack,
+      timestamp: new Date().toISOString(),
+    });
+
+    response.status(status).json({
+      success: false,
+      statusCode: status,
+      message,
+      errors,
+      timestamp: new Date().toISOString(),
+    });
   }
 }

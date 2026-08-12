@@ -1,0 +1,26 @@
+# package.json
+{
+  "name": "ai-voice-todo-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI Voice Todo List Application",
+  "main": "src/main.py",
+  "scripts": {
+    "start": "uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload",
+    "test": "pytest tests/",
+    "test-coverage": "pytest tests/ --cov=src --cov-report=html"
+  },
+  "dependencies": {
+    "fastapi": "^0.95.0",
+    "uvicorn": "^0.21.1",
+    "sqlalchemy": "^2.0.12",
+    "psycopg2-binary": "^2.9.6",
+    "passlib": "^1.7.4",
+    "python-jose": "^1.7.0",
+    "python-multipart": "^0.0.6"
+  },
+  "devDependencies": {
+    "pytest": "^7.3.1",
+    "pytest-cov": "^4.0.0",
+    "pytest-asyncio": "^0.20.3"
+  }
+}

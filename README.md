@@ -211,20 +211,22 @@ OLLAMA_MODEL=qwen3-coder:30b
 
 ## ▶️ Running the Project
 
-### Start Backend Service (Python / FastAPI)
+### Start NestJS Backend Service
 
 ```bash
-uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Or for NestJS:
-```bash
+# Start in Development Mode (with hot-reload)
 npm run start:dev
+
+# Build for Production
+npm run build
+
+# Start Production Server
+npm run start:prod
 ```
 
 Backend API server will be accessible at:
 ```text
-http://localhost:8000
+http://localhost:3000
 ```
 
 ---

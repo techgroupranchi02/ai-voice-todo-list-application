@@ -1,0 +1,8 @@
+{
+  "extends": ["@nestjs/eslint-plugin"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "@typescript-eslint/consistent-type-assertions": "error"
+  }
+}

@@ -1,0 +1,6 @@
+5. Run migrations: `npm run migration:run`
+6. Start the application: `npm run start:dev`
+
+## Testing
+
+Run unit tests: `

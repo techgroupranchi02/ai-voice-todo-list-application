@@ -6,7 +6,7 @@ import * as bcrypt from 'bcryptjs';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let userRepository;
+  let userRepository: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -100,7 +100,7 @@ describe('AuthService', () => {
       };
 
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
+      (jest.spyOn(bcrypt, 'compare') as any).mockResolvedValue(true);
 
       expect(await service.validateUser(email, password)).toEqual(mockUser);
     });

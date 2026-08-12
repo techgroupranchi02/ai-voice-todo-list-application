@@ -6,25 +6,24 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'first_name' })
+  @Column({ type: 'varchar', length: 255 })
   firstName: string;
 
-  @Column({ name: 'last_name' })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   lastName: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   password: string;
 
-  @Column({ name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
-
-  @Column({ name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
-  updatedAt: Date;
-
-  // Relations
   @OneToMany(() => Task, task => task.user)
   tasks: Task[];
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 }

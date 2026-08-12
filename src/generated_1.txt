@@ -1,35 +1,48 @@
 ai-voice-todo/
 ├── package.json
-├── requirements.txt
+├── tsconfig.json
 ├── src/
-│   ├── main.py
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── user.py
-│   │   ├── task.py
-│   │   └── category.py
+│   ├── main.ts
+│   ├── app.module.ts
+│   ├── auth/
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   ├── auth.module.ts
+│   │   ├── dto/
+│   │   │   └── register.dto.ts
+│   │   └── strategies/
+│   │       └── jwt.strategy.ts
+│   ├── tasks/
+│   │   ├── tasks.controller.ts
+│   │   ├── tasks.service.ts
+│   │   ├── tasks.module.ts
+│   │   ├── dto/
+│   │   │   ├── create-task.dto.ts
+│   │   │   └── voice-task.dto.ts
+│   │   └── entities/
+│   │       └── task.entity.ts
+│   ├── users/
+│   │   ├── users.controller.ts
+│   │   ├── users.service.ts
+│   │   ├── users.module.ts
+│   │   └── entities/
+│   │       └── user.entity.ts
 │   ├── database/
-│   │   ├── __init__.py
-│   │   └── db.py
-│   ├── api/
-│   │   ├── __init__.py
-│   │   ├── auth.py
-│   │   ├── tasks.py
-│   │   └── teams.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── user_service.py
-│   │   ├── task_service.py
-│   │   └── voice_service.py
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── validators.py
-│   │   └── helpers.py
+│   │   └── database.providers.ts
+│   ├── shared/
+│   │   ├── exceptions/
+│   │   │   ├── http-exception.filter.ts
+│   │   │   └── validation.exception.ts
+│   │   └── guards/
+│   │       └── auth.guard.ts
 │   └── config/
-│       ├── __init__.py
-│       └── settings.py
-├── tests/
-│   ├── test_auth.py
-│   ├── test_tasks.py
-│   └── test_voice.py
+│       └── database.config.ts
+├── test/
+│   ├── auth/
+│   │   ├── auth.controller.spec.ts
+│   │   └── auth.service.spec.ts
+│   ├── tasks/
+│   │   ├── tasks.controller.spec.ts
+│   │   └── tasks.service.spec.ts
+│   └── jest-e2e.json
 └── README.md

@@ -2,27 +2,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
-import { User } from '../users/entities/user.entity';
-import { Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 describe('TasksService', () => {
   let service: TasksService;
-  let taskRepository: Repository<Task>;
-  let userRepository: Repository<User>;
-
-  const mockTaskRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    remove: jest.fn(),
-  };
-
-  const mockUserRepository = {
-    findOne: jest.fn(),
-  };
+  let mockTaskRepository;
 
   beforeEach(async () => {
+    mockTaskRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -31,15 +22,15 @@ describe('TasksService', () => {
           useValue: mockTaskRepository,
         },
         {
-          provide: getRepositoryToken(User),
-          useValue: mockUserRepository,
+          provide: DataSource,
+          useValue: {
+            createEntityManager: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     service = module.get<TasksService>(TasksService);
-    taskRepository = module.get(getRepositoryToken(Task));
-    userRepository = module.get(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
@@ -48,65 +39,78 @@ describe('TasksService', () => {
 
   describe('create', () => {
     it('should create a task successfully', async () => {
-      const mockUser: User = { id: '1', email: 'test@example.com' } as User;
-      const createTaskDto = { title: 'Test Task' };
-      const mockTask = { id: '1', ...createTaskDto, user: mockUser };
-      
-      mockTaskRepository.create.mockReturnValue(mockTask);
-      mockTaskRepository.save.mockResolvedValue(mockTask);
-      
-      const result = await service.create(createTaskDto, mockUser);
-      
-      expect(result).toEqual({
-        taskId: '1',
-        message: 'Task created successfully.',
-      });
+      const createTaskDto = {
+        title: 'Grocery Shopping',
+        description: 'Buy milk, eggs, and bread.',
+        dueDate: new Date('2024-03-15'),
+        priority: 1,
+        category: 'Personal',
+      };
+
+      const mockSavedTask = {
+        id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+        ...createTaskDto,
+        userId: 'user-id',
+      };
+
+      mockTaskRepository.create.mockReturnValue(mockSavedTask);
+      mockTaskRepository.save.mockResolvedValue(mockSavedTask);
+
+      const result = await service.create(createTaskDto, 'user-id');
+
+      expect(result).toEqual({ taskId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' });
     });
 
-    it('should throw error when title is empty', async () => {
-      const mockUser: User = { id: '1', email: 'test@example.com' } as User;
-      const createTaskDto = { title: '' };
-      
-      await expect(service.create(createTaskDto, mockUser)).rejects.toThrow('Title cannot be empty.');
+    it('should throw error for invalid input', async () => {
+      const createTaskDto = {
+        title: '',
+        description: 'Buy milk, eggs, and bread.',
+        dueDate: new Date('2024-03-15'),
+        priority: 1,
+        category: 'Personal',
+      };
+
+      await expect(service.create(createTaskDto, 'user-id')).rejects.toThrow('Invalid input');
     });
   });
 
   describe('createFromVoice', () => {
-    it('should process voice input successfully', async () => {
-      const mockUser: User = { id: '1', email: 'test@example.com' } as User;
-      const audioData = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAf';
-      
-      const mockTask = { 
-        id: '1', 
-        title: 'Voice Task',
-        description: 'Task created from voice input',
-        user: mockUser,
-        priority: 1,
-        completed: false
+    it('should create a task from voice successfully', async () => {
+      const createVoiceTaskDto = {
+        audioData: 'base64-encoded-audio-data',
       };
-      
-      mockTaskRepository.create.mockReturnValue(mockTask);
-      mockTaskRepository.save.mockResolvedValue(mockTask);
-      
-      const result = await service.createFromVoice(audioData, mockUser);
-      
-      expect(result).toEqual({
-        taskId: '1',
-        message: 'Task created from voice input successfully.',
-      });
+
+      const mockSavedTask = {
+        id: 'f1g2h3i4-j5k6-l7m8-90ab-cdefghijklmn',
+        title: 'Voice Task',
+        description: 'Task created from voice input: base64-encoded-audio-data...',
+        userId: 'user-id',
+        priority: 1,
+        category: 'Voice Input',
+      };
+
+      mockTaskRepository.create.mockReturnValue(mockSavedTask);
+      mockTaskRepository.save.mockResolvedValue(mockSavedTask);
+
+      const result = await service.createFromVoice(createVoiceTaskDto, 'user-id');
+
+      expect(result).toEqual({ taskId: 'f1g2h3i4-j5k6-l7m8-90ab-cdefghijklmn' });
     });
 
-    it('should throw error when audio data is missing', async () => {
-      const mockUser: User = { id: '1', email: 'test@example.com' } as User;
-      
-      await expect(service.createFromVoice('', mockUser)).rejects.toThrow('Audio data is required.');
+    it('should throw error for invalid audio data', async () => {
+      const createVoiceTaskDto = {
+        audioData: '',
+      };
+
+      await expect(service.createFromVoice(createVoiceTaskDto, 'user-id')).rejects.toThrow('Invalid audio data');
     });
 
-    it('should throw error when audio format is invalid', async () => {
-      const mockUser: User = { id: '1', email: 'test@example.com' } as User;
-      const audioData = 'invalid-audio-data';
-      
-      await expect(service.createFromVoice(audioData, mockUser)).rejects.toThrow('Invalid audio data format. Expected base64 encoded audio.');
+    it('should throw error for large audio file', async () => {
+      const createVoiceTaskDto = {
+        audioData: 'data:audio/wav;base64,' + 'A'.repeat(10 * 1024 * 1024), // 10MB of data
+      };
+
+      await expect(service.createFromVoice(createVoiceTaskDto, 'user-id')).rejects.toThrow('Audio file too large');
     });
   });
 });

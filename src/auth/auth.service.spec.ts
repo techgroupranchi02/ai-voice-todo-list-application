@@ -1,13 +1,22 @@
-// src/auth/auth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: UsersService;
   let jwtService: JwtService;
+
+  const mockUsersService = {
+    findOneByEmail: jest.fn(),
+    create: jest.fn(),
+  };
+
+  const mockJwtService = {
+    sign: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,16 +24,11 @@ describe('AuthService', () => {
         AuthService,
         {
           provide: UsersService,
-          useValue: {
-            findByEmail: jest.fn(),
-            create: jest.fn(),
-          },
+          useValue: mockUsersService,
         },
         {
           provide: JwtService,
-          useValue: {
-            sign: jest.fn(),
-          },
+          useValue: mockJwtService,
         },
       ],
     }).compile();
@@ -38,69 +42,70 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('register', () => {
-    it('should register a new user', async () => {
-      const createUserDto = {
+  describe('validateUser', () => {
+    it('should return user if credentials are valid', async () => {
+      const mockUser = {
+        id: '1',
         email: 'test@example.com',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe',
+        password: await bcrypt.hash('password', 10),
       };
       
-      jest.spyOn(usersService, 'findByEmail').mockResolvedValue(null);
-      jest.spyOn(usersService, 'create').mockResolvedValue({
-        id: 1,
-        ...createUserDto,
-        password: 'hashedPassword',
-      });
-      jest.spyOn(jwtService, 'sign').mockReturnValue('jwtToken');
+      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
       
-      const result = await service.register(createUserDto);
+      const result = await service.validateUser('test@example.com', 'password');
       
-      expect(result).toEqual({
-        success: true,
-        data: {
-          userId: 1,
-          message: 'User registered successfully.',
-          accessToken: 'jwtToken',
-        },
-      });
+      expect(result).toEqual({ id: '1', email: 'test@example.com' });
     });
 
-    it('should throw an error if user already exists', async () => {
-      const createUserDto = {
-        email: 'test@example.com',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe',
-      };
+    it('should return null if credentials are invalid', async () => {
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
       
-      jest.spyOn(usersService, 'findByEmail').mockResolvedValue({
-        id: 1,
-        ...createUserDto,
-        password: 'hashedPassword',
-      });
+      const result = await service.validateUser('test@example.com', 'password');
       
-      await expect(service.register(createUserDto)).rejects.toThrow('An account with this email already exists.');
+      expect(result).toBeNull();
     });
   });
 
-  describe('validateUser', () => {
-    it('should validate a user', async () => {
-      const user = {
-        id: 1,
+  describe('register', () => {
+    it('should register a new user successfully', async () => {
+      const mockUser = {
+        id: '1',
         email: 'test@example.com',
-        password: 'hashedPassword',
+        password: await bcrypt.hash('password', 10),
+        firstName: 'John',
+        lastName: 'Doe',
       };
       
-      jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user);
+      mockUsersService.findOneByEmail.mockResolvedValue(null);
+      mockUsersService.create.mockResolvedValue(mockUser);
       
-      const result = await service.validateUser('test@example.com', 'password123');
+      const result = await service.register(
+        'test@example.com',
+        'password',
+        'John',
+        'Doe'
+      );
       
       expect(result).toEqual({
-        id: 1,
-        email: 'test@example.com',
+        userId: '1',
+        message: 'User registered successfully.',
       });
+    });
+
+    it('should throw error if user already exists', async () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        password: await bcrypt.hash('password', 10),
+        firstName: 'John',
+        lastName: 'Doe',
+      };
+      
+      mockUsersService.findOneByEmail.mockResolvedValue(mockUser);
+      
+      await expect(
+        service.register('test@example.com', 'password', 'John', 'Doe')
+      ).rejects.toThrow('An account with this email already exists.');
     });
   });
 });

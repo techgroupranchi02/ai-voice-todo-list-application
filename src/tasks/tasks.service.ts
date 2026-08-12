@@ -1,10 +1,9 @@
-// src/tasks/tasks.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Task } from './task.entity';
-import { CreateTaskDto, CreateVoiceTaskDto } from './tasks.dto';
-import { User } from '../users/user.entity';
+import { Task } from './entities/task.entity';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { VoiceTaskDto } from './dto/voice-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -13,87 +12,66 @@ export class TasksService {
     private taskRepository: Repository<Task>,
   ) {}
 
-  async createTask(createTaskDto: CreateTaskDto, user: User): Promise<{ taskId: string; message: string }> {
+  async create(createTaskDto: CreateTaskDto, userId: string): Promise<{ taskId: string; message: string }> {
     const { title, description, dueDate, priority, category } = createTaskDto;
 
-    // Validate title
+    // Validate required fields
     if (!title) {
-      throw new NotFoundException('Title cannot be empty.');
+      throw new Error('Title cannot be empty.');
     }
 
     // Create task
-    const task = this.taskRepository.create({
+    const newTask = this.taskRepository.create({
       title,
       description,
       dueDate,
       priority,
       category,
-      user,
+      userId: userId,
     });
 
-    const savedTask = await this.taskRepository.save(task);
+    const savedTask = await this.taskRepository.save(newTask);
     
     return {
-      taskId: savedTask.id,
+      taskId: savedTask.id.toString(),
       message: 'Task created successfully.',
     };
   }
 
-  async createVoiceTask(createVoiceTaskDto: CreateVoiceTaskDto, user: User): Promise<{ taskId: string; message: string }> {
-    const { audioData } = createVoiceTaskDto;
+  async createFromVoice(voiceTaskDto: VoiceTaskDto, userId: string): Promise<{ taskId: string; message: string }> {
+    try {
+      // In a real implementation, this would process the audio data
+      // For now, we'll simulate processing by parsing the base64 data
+      
+      const { audioData } = voiceTaskDto;
+      
+      if (!audioData) {
+        throw new Error('Audio data is required.');
+      }
+      
+      // Simulate audio processing - in reality this would:
+      // 1. Decode base64 audio
+      // 2. Send to speech-to-text service (e.g., Google Cloud Speech, AWS Transcribe)
+      // 3. Process the text to extract task details
+      
+      // For demo purposes, we'll create a sample task
+      const newTask = this.taskRepository.create({
+        title: 'Voice Task',
+        description: 'Created from voice input',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Voice Input',
+        userId: userId,
+      });
 
-    // In a real implementation, this would process the audio data
-    // For now, we'll simulate processing and create a task
-    
-    // Simulate audio processing error (5% chance)
-    if (Math.random() < 0.05) {
-      throw new Error('Error processing the audio data.');
+      const savedTask = await this.taskRepository.save(newTask);
+      
+      return {
+        taskId: savedTask.id.toString(),
+        message: 'Task created from voice input successfully.',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Error processing the audio data.');
     }
-
-    // Create a default task from voice input
-    const task = this.taskRepository.create({
-      title: 'Voice Task',
-      description: 'Created from voice input',
-      user,
-    });
-
-    const savedTask = await this.taskRepository.save(task);
-    
-    return {
-      taskId: savedTask.id,
-      message: 'Task created from voice input successfully.',
-    };
-  }
-
-  async getTasksByUser(userId: string): Promise<Task[]> {
-    return await this.taskRepository.find({
-      where: { user: { id: userId } },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async getTaskById(taskId: string, userId: string): Promise<Task> {
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId, user: { id: userId } },
-    });
-    
-    if (!task) {
-      throw new NotFoundException('Task not found.');
-    }
-    
-    return task;
-  }
-
-  async updateTask(taskId: string, userId: string, updateData: Partial<Task>): Promise<Task> {
-    const task = await this.getTaskById(taskId, userId);
-    
-    Object.assign(task, updateData);
-    
-    return await this.taskRepository.save(task);
-  }
-
-  async deleteTask(taskId: string, userId: string): Promise<void> {
-    const task = await this.getTaskById(taskId, userId);
-    await this.taskRepository.remove(task);
   }
 }

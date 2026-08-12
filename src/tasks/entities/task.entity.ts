@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../../auth/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('tasks')
 export class Task {
@@ -16,6 +16,9 @@ export class Task {
 
   @Column({ nullable: true })
   userId: string;
+
+  @Column({ nullable: true })
+  assigneeId: string;
 
   @Column({ length: 255 })
   title: string;

@@ -6,10 +6,11 @@ export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
-  userId: string;
+  @ManyToOne(() => User, user => user.tasks)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   title: string;
 
   @Column({ type: 'text', nullable: true })
@@ -18,23 +19,18 @@ export class Task {
   @Column({ type: 'timestamp', nullable: true })
   dueDate: Date;
 
-  @Column({ type: 'integer', nullable: true })
+  @Column({ type: 'int', default: 1 }) // 1=Low, 2=Medium, 3=High
   priority: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   category: string;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', default: false })
   completed: boolean;
 
-  @Column({ name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @Column({ name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
-
-  // Relations
-  @ManyToOne(() => User, user => user.tasks)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
 }

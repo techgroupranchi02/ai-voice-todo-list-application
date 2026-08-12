@@ -1,0 +1,35 @@
+ai-voice-todo/
+├── package.json
+├── requirements.txt
+├── src/
+│   ├── main.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── task.py
+│   │   └── category.py
+│   ├── database/
+│   │   ├── __init__.py
+│   │   └── db.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── tasks.py
+│   │   └── teams.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── user_service.py
+│   │   ├── task_service.py
+│   │   └── voice_service.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── validators.py
+│   │   └── helpers.py
+│   └── config/
+│       ├── __init__.py
+│       └── settings.py
+├── tests/
+│   ├── test_auth.py
+│   ├── test_tasks.py
+│   └── test_voice.py
+└── README.md

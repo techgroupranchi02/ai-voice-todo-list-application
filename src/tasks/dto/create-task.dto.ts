@@ -1,18 +1,17 @@
-import { IsString, IsOptional, IsDate, IsNumber, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()
   @IsOptional()
   description?: string;
 
-  @IsDate()
   @IsOptional()
   dueDate?: Date;
 
-  @IsNumber()
   @IsOptional()
   priority?: number;
 
@@ -20,7 +19,7 @@ export class CreateTaskDto {
   @IsOptional()
   category?: string;
 
-  @IsBoolean()
+  @IsUUID()
   @IsOptional()
-  completed?: boolean;
+  assigneeId?: string;
 }

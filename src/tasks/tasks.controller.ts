@@ -1,49 +1,103 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('api/v1/tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createTaskDto: CreateTaskDto, @Request() req) {
-    return this.tasksService.create(createTaskDto, req.user);
+  @UseGuards(AuthGuard('jwt'))
+  async create(@Body() createTaskDto: CreateTaskDto, @Request() req) {
+    const userId = req.user.userId;
+    
+    try {
+      const result = await this.tasksService.create(createTaskDto, userId);
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      if (error.message === 'Invalid input') {
+        return {
+          success: false,
+          error: {
+            code: HttpStatus.BAD_REQUEST,
+            message: 'Title cannot be empty.',
+          },
+        };
+      }
+      
+      throw error;
+    }
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('voice')
-  createFromVoice(@Body('audioData') audioData: string, @Request() req) {
-    return this.tasksService.createFromVoice(audioData, req.user);
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  async createFromVoice(@Body() createVoiceTaskDto: CreateVoiceTaskDto, @Request() req) {
+    const userId = req.user.userId;
+    
+    try {
+      const result = await this.tasksService.createFromVoice(createVoiceTaskDto, userId);
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      if (error.message === 'Audio processing error') {
+        return {
+          success: false,
+          error: {
+            code: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Error processing the audio data.',
+          },
+        };
+      }
+      
+      throw error;
+    }
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  findAll(@Request() req) {
-    return this.tasksService.findAll(req.user);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  findOne(@Param('id') id: string, @Request() req) {
-    return this.tasksService.findOne(id, req.user);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post(':team_id/tasks')
-  createTeamTask(
-    @Param('team_id') teamId: string,
+  @Post('teams/:team_id')
+  @UseGuards(AuthGuard('jwt'))
+  async createInTeam(
+    @Param('team_id', ParseUUIDPipe) teamId: string,
     @Body() createTaskDto: CreateTaskDto,
     @Request() req
   ) {
-    return this.tasksService.createTeamTask(teamId, createTaskDto, req.user);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string, @Request() req) {
-    return this.tasksService.remove(id, req.user);
+    const userId = req.user.userId;
+    
+    try {
+      const result = await this.tasksService.createInTeam(createTaskDto, userId, teamId);
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      if (error.message === 'Invalid input') {
+        return {
+          success: false,
+          error: {
+            code: HttpStatus.BAD_REQUEST,
+            message: 'Title cannot be empty.',
+          },
+        };
+      }
+      
+      throw error;
+    }
   }
 }

@@ -1,0 +1,31 @@
+
+## Database Schema
+
+The application uses the following database schema:
+
+### Users Table
+- id (BIGINT, PRIMARY KEY)
+- first_name (VARCHAR(255))
+- last_name (VARCHAR(255))
+- email (VARCHAR(255), UNIQUE)
+- password (VARCHAR(255))
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### Tasks Table
+- id (BIGINT, PRIMARY KEY)
+- user_id (BIGINT, FOREIGN KEY to users.id)
+- title (VARCHAR(255))
+- description (TEXT)
+- due_date (TIMESTAMP)
+- priority (INTEGER)
+- category_id (BIGINT, FOREIGN KEY to categories.id)
+- completed (BOOLEAN)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+### Categories Table
+- id (BIGINT, PRIMARY KEY)
+- name (VARCHAR(255))
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)

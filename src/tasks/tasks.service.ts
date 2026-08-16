@@ -129,6 +129,17 @@ export class TasksService {
     return this.taskRepository.save(task);
   }
 
+  async update(taskId: string, updateData: Partial<Task>, userId: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId, userId },
+    });
+    if (!task) {
+      throw new BadRequestException('Task not found');
+    }
+    Object.assign(task, updateData);
+    return this.taskRepository.save(task);
+  }
+
   async remove(taskId: string, userId: string): Promise<{ success: boolean }> {
     await this.taskRepository.delete({ id: taskId, userId });
     return { success: true };

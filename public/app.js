@@ -313,6 +313,8 @@ function handleAuthExpired() {
   alert('Your login session has expired or is invalid. Please login again.');
 }
 
+let currentFilter = 'all';
+
 async function loadTasks() {
   if (!token) {
     tasks = [];
@@ -337,12 +339,13 @@ async function loadTasks() {
       tasks = data.data.map(t => ({
         id: t.id,
         title: t.title,
+        description: t.description || '',
         category: t.category || 'General',
-        completed: t.completed || false,
-        isVoice: t.category === 'Voice Input',
+        completed: Boolean(t.completed),
+        isVoice: t.category === 'Voice Input' || (t.description && t.description.toLowerCase().includes('voice')),
         createdAt: t.createdAt
       }));
-      renderTasks(tasks);
+      filterTasks(currentFilter);
     }
   } catch (err) {
     console.error('Failed to load tasks from server:', err);
@@ -361,18 +364,30 @@ function renderTasks(items) {
 
   items.forEach(task => {
     const card = document.createElement('div');
-    card.className = 'task-card';
+    card.className = `task-card ${task.completed ? 'task-completed-card' : ''}`;
     card.innerHTML = `
       <div class="task-header">
-        <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
-        <div class="task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title)}</div>
-        <button class="delete-btn" onclick="deleteTask('${task.id}')" title="Delete Task">
+        <label class="custom-checkbox-wrapper" title="${task.completed ? 'Mark as Pending' : 'Mark as Completed'}">
+          <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
+          <span class="custom-checkbox"><i class="fa-solid fa-check"></i></span>
+        </label>
+        <div class="task-title-group" onclick="toggleTask('${task.id}')" title="Click to toggle status">
+          <div class="task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title)}</div>
+          ${task.description && !task.description.startsWith('Task created from voice') ? `<div class="task-desc">${escapeHtml(task.description)}</div>` : ''}
+        </div>
+        <button class="delete-btn" onclick="event.stopPropagation(); deleteTask('${task.id}')" title="Delete Task">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
-      <div class="task-meta">
-        ${task.isVoice ? '<span class="badge badge-voice"><i class="fa-solid fa-microphone"></i> Voice</span>' : ''}
-        <span class="badge badge-category">${escapeHtml(task.category || 'General')}</span>
+      <div class="task-footer">
+        <div class="task-meta">
+          ${task.isVoice ? '<span class="badge badge-voice"><i class="fa-solid fa-microphone"></i> Voice</span>' : ''}
+          <span class="badge badge-category">${escapeHtml(task.category || 'General')}</span>
+        </div>
+        <button class="status-action-btn ${task.completed ? 'btn-status-completed' : 'btn-status-pending'}" onclick="event.stopPropagation(); toggleTask('${task.id}')" title="${task.completed ? 'Click to change status to Pending' : 'Click to change status to Completed'}">
+          <i class="fa-solid ${task.completed ? 'fa-circle-check' : 'fa-circle-dot'}"></i>
+          <span>${task.completed ? 'Completed' : 'Mark Complete'}</span>
+        </button>
       </div>
     `;
     taskGrid.appendChild(card);
@@ -396,6 +411,14 @@ function escapeHtml(text) {
 
 async function toggleTask(id) {
   if (!token) return;
+
+  // Optimistic UI update
+  const task = tasks.find(t => t.id === id);
+  if (task) {
+    task.completed = !task.completed;
+    filterTasks(currentFilter);
+  }
+
   try {
     const res = await fetch(`${API_BASE}/tasks/${id}/toggle`, {
       method: 'PATCH',
@@ -403,13 +426,29 @@ async function toggleTask(id) {
         'Authorization': `Bearer ${token}`
       }
     });
+
     if (res.status === 401) {
       handleAuthExpired();
       return;
     }
-    await loadTasks();
+
+    if (!res.ok) {
+      // Revert if failed
+      if (task) {
+        task.completed = !task.completed;
+        filterTasks(currentFilter);
+      }
+      const data = await res.json();
+      alert(data.error?.message || data.message || 'Failed to update task status');
+    } else {
+      await loadTasks();
+    }
   } catch (err) {
     console.error('Failed to toggle task:', err);
+    if (task) {
+      task.completed = !task.completed;
+      filterTasks(currentFilter);
+    }
   }
 }
 
@@ -434,8 +473,21 @@ async function deleteTask(id) {
 }
 
 function filterTasks(filter) {
-  if (filter === 'pending') renderTasks(tasks.filter(t => !t.completed));
-  else if (filter === 'completed') renderTasks(tasks.filter(t => t.completed));
-  else if (filter === 'voice') renderTasks(tasks.filter(t => t.isVoice));
-  else renderTasks(tasks);
+  currentFilter = filter || 'all';
+  const query = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  let filtered = tasks;
+
+  if (currentFilter === 'pending') filtered = tasks.filter(t => !t.completed);
+  else if (currentFilter === 'completed') filtered = tasks.filter(t => t.completed);
+  else if (currentFilter === 'voice') filtered = tasks.filter(t => t.isVoice);
+
+  if (query) {
+    filtered = filtered.filter(t => t.title.toLowerCase().includes(query));
+  }
+
+  renderTasks(filtered);
 }
+
+window.toggleTask = toggleTask;
+window.deleteTask = deleteTask;
+window.filterTasks = filterTasks;

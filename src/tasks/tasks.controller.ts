@@ -15,6 +15,7 @@ import {
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('api/v1/tasks')
@@ -56,6 +57,21 @@ export class TasksController {
       
       throw error;
     }
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    const task = await this.tasksService.update(id, updateTaskDto, userId);
+    return {
+      success: true,
+      data: task,
+    };
   }
 
   @Patch(':id/toggle')

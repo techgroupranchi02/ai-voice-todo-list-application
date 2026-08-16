@@ -12,9 +12,11 @@ export const VoiceRecorderButton: React.FC<Props> = ({ onVoiceRecorded }) => {
   const handlePress = async () => {
     if (!isRecording) {
       setIsRecording(true);
+      // Simulate live audio recording stream
     } else {
       setIsRecording(false);
       setIsProcessing(true);
+      // Mock base64 voice payload for demo
       setTimeout(() => {
         setIsProcessing(false);
         onVoiceRecorded('data:audio/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQAC...demo');

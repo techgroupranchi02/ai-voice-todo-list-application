@@ -40,7 +40,7 @@ export class AuthService {
       email,
       password: hashedPassword,
       firstName,
-      lastName,
+      lastName: lastName || '',
     });
 
     const savedUser = await this.userRepository.save(user);

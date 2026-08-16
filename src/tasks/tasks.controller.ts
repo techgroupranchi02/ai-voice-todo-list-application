@@ -1,6 +1,9 @@
 import {
   Controller,
+  Get,
   Post,
+  Patch,
+  Delete,
   Body,
   UseGuards,
   Request,
@@ -17,6 +20,17 @@ import { AuthGuard } from '@nestjs/passport';
 @Controller('api/v1/tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
+
+  @Get()
+  @UseGuards(AuthGuard('jwt'))
+  async findAll(@Request() req) {
+    const userId = req.user.userId;
+    const tasks = await this.tasksService.findAll(userId);
+    return {
+      success: true,
+      data: tasks,
+    };
+  }
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
@@ -42,6 +56,28 @@ export class TasksController {
       
       throw error;
     }
+  }
+
+  @Patch(':id/toggle')
+  @UseGuards(AuthGuard('jwt'))
+  async toggle(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const userId = req.user.userId;
+    const task = await this.tasksService.toggle(id, userId);
+    return {
+      success: true,
+      data: task,
+    };
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async remove(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const userId = req.user.userId;
+    const result = await this.tasksService.remove(id, userId);
+    return {
+      success: true,
+      data: result,
+    };
   }
 
   @Post('voice')

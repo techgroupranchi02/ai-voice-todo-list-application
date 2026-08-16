@@ -43,7 +43,7 @@ export class TasksService {
   }
 
   async createFromVoice(createVoiceTaskDto: CreateVoiceTaskDto, userId: string): Promise<{ taskId: string }> {
-    const { audioData } = createVoiceTaskDto;
+    const { audioData, transcript, title } = createVoiceTaskDto;
 
     // Validate audio data
     if (!audioData || typeof audioData !== 'string') {
@@ -51,22 +51,26 @@ export class TasksService {
     }
 
     // Validate audio size (max 10MB)
-    const audioSizeInBytes = Buffer.from(audioData, 'base64').length;
+    const base64Content = audioData.includes(',') ? audioData.split(',')[1] : audioData;
+    const audioSizeInBytes = Buffer.from(base64Content, 'base64').length;
     if (audioSizeInBytes > 10 * 1024 * 1024) {
       throw new BadRequestException('Audio file too large');
     }
 
-    // Validate audio format (basic check)
-    if (!audioData.startsWith('data:audio/')) {
+    // Validate audio format (basic check if data URI)
+    if (audioData.startsWith('data:') && !audioData.startsWith('data:audio/')) {
       throw new BadRequestException('Invalid audio format');
     }
 
     try {
-      const processedText = `Task created from voice input: ${audioData.substring(0, 50)}...`;
-      
+      const taskTitle = (title && title.trim()) || (transcript && transcript.trim()) || 'Voice Task';
+      const description = (transcript && transcript.trim())
+        ? `Voice Input: "${transcript.trim()}"`
+        : `Task created from voice input: ${audioData.substring(0, 50)}...`;
+
       const task = this.taskRepository.create({
-        title: 'Voice Task',
-        description: processedText,
+        title: taskTitle,
+        description: description,
         userId,
         priority: 1,
         category: 'Voice Input',
@@ -105,5 +109,28 @@ export class TasksService {
     return {
       taskId: (savedTask as Task).id.toString(),
     };
+  }
+
+  async findAll(userId: string): Promise<Task[]> {
+    return this.taskRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async toggle(taskId: string, userId: string): Promise<Task> {
+    const task = await this.taskRepository.findOne({
+      where: { id: taskId, userId },
+    });
+    if (!task) {
+      throw new BadRequestException('Task not found');
+    }
+    task.completed = !task.completed;
+    return this.taskRepository.save(task);
+  }
+
+  async remove(taskId: string, userId: string): Promise<{ success: boolean }> {
+    await this.taskRepository.delete({ id: taskId, userId });
+    return { success: true };
   }
 }

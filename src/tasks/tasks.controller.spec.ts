@@ -3,30 +3,20 @@ import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { Task } from './entities/task.entity';
+import { NotFoundException } from '@nestjs/common';
 
 describe('TasksController', () => {
   let controller: TasksController;
   let service: TasksService;
 
-  const mockTask = {
-    id: 1,
-    title: 'Test Task',
-    description: 'Test Description',
-    dueDate: new Date(),
-    priority: 2,
-    category: 'Personal',
-    completed: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
   const mockTasksService = {
-    create: jest.fn().mockResolvedValue(mockTask),
-    findAll: jest.fn().mockResolvedValue([mockTask]),
-    findOne: jest.fn().mockResolvedValue(mockTask),
-    update: jest.fn().mockResolvedValue(mockTask),
-    toggleCompletion: jest.fn().mockResolvedValue({ ...mockTask, completed: true }),
-    remove: jest.fn().mockResolvedValue(undefined),
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+    toggleCompletion: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -49,57 +39,212 @@ describe('TasksController', () => {
   });
 
   describe('create', () => {
-    it('should create a task', async () => {
+    it('should create a task and return success response', async () => {
       const createTaskDto: CreateTaskDto = {
         title: 'Test Task',
         description: 'Test Description',
         dueDate: new Date(),
-        priority: 2,
+        priority: 1,
         category: 'Personal',
         completed: false,
+        user: { id: 1 },
       };
 
-      expect(await controller.create(createTaskDto)).toEqual(mockTask);
+      const mockTask: Task = {
+        id: 1,
+        ...createTaskDto,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTasksService.create.mockResolvedValue(mockTask);
+
+      const result = await controller.create(createTaskDto);
+      expect(result).toEqual({
+        success: true,
+        data: mockTask,
+      });
       expect(service.create).toHaveBeenCalledWith(createTaskDto);
+    });
+
+    it('should throw an error when task creation fails', async () => {
+      const createTaskDto: CreateTaskDto = {
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: false,
+        user: { id: 1 },
+      };
+
+      mockTasksService.create.mockRejectedValue(new Error('Database error'));
+
+      await expect(controller.create(createTaskDto)).rejects.toThrow(Error);
     });
   });
 
   describe('findAll', () => {
-    it('should return all tasks', async () => {
-      expect(await controller.findAll()).toEqual([mockTask]);
+    it('should return all tasks and success response', async () => {
+      const mockTasks: Task[] = [
+        {
+          id: 1,
+          title: 'Test Task 1',
+          description: 'Test Description 1',
+          dueDate: new Date(),
+          priority: 1,
+          category: 'Personal',
+          completed: false,
+          user: { id: 1 },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 2,
+          title: 'Test Task 2',
+          description: 'Test Description 2',
+          dueDate: new Date(),
+          priority: 2,
+          category: 'Work',
+          completed: true,
+          user: { id: 1 },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockTasksService.findAll.mockResolvedValue(mockTasks);
+
+      const result = await controller.findAll();
+      expect(result).toEqual({
+        success: true,
+        data: mockTasks,
+      });
       expect(service.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
-    it('should return a task by ID', async () => {
-      expect(await controller.findOne('1')).toEqual(mockTask);
+    it('should return a task and success response', async () => {
+      const mockTask: Task = {
+        id: 1,
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: false,
+        user: { id: 1 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTasksService.findOne.mockResolvedValue(mockTask);
+
+      const result = await controller.findOne(1);
+      expect(result).toEqual({
+        success: true,
+        data: mockTask,
+      });
       expect(service.findOne).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException when task is not found', async () => {
+      mockTasksService.findOne.mockRejectedValue(new NotFoundException());
+
+      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should update a task', async () => {
+    it('should update a task and return success response', async () => {
+      const updateTaskDto: UpdateTaskDto = {
+        title: 'Updated Task',
+        description: 'Updated Description',
+      };
+
+      const mockTask: Task = {
+        id: 1,
+        title: 'Updated Task',
+        description: 'Updated Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: false,
+        user: { id: 1 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTasksService.update.mockResolvedValue(mockTask);
+
+      const result = await controller.update(1, updateTaskDto);
+      expect(result).toEqual({
+        success: true,
+        data: mockTask,
+      });
+      expect(service.update).toHaveBeenCalledWith(1, updateTaskDto);
+    });
+
+    it('should throw an error when task update fails', async () => {
       const updateTaskDto: UpdateTaskDto = {
         title: 'Updated Task',
       };
 
-      expect(await controller.update('1', updateTaskDto)).toEqual(mockTask);
-      expect(service.update).toHaveBeenCalledWith(1, updateTaskDto);
+      mockTasksService.update.mockRejectedValue(new Error('Database error'));
+
+      await expect(controller.update(1, updateTaskDto)).rejects.toThrow(Error);
     });
   });
 
   describe('toggleCompletion', () => {
-    it('should toggle task completion', async () => {
-      expect(await controller.toggleCompletion('1')).toEqual({ ...mockTask, completed: true });
+    it('should toggle task completion and return success response', async () => {
+      const mockTask: Task = {
+        id: 1,
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: true,
+        user: { id: 1 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTasksService.toggleCompletion.mockResolvedValue(mockTask);
+
+      const result = await controller.toggleCompletion(1);
+      expect(result).toEqual({
+        success: true,
+        data: mockTask,
+      });
       expect(service.toggleCompletion).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw an error when toggling completion fails', async () => {
+      mockTasksService.toggleCompletion.mockRejectedValue(new Error('Database error'));
+
+      await expect(controller.toggleCompletion(1)).rejects.toThrow(Error);
     });
   });
 
   describe('remove', () => {
-    it('should remove a task', async () => {
-      await controller.remove('1');
+    it('should delete a task and return success response', async () => {
+      mockTasksService.remove.mockResolvedValue(undefined);
+
+      const result = await controller.remove(1);
+      expect(result).toEqual({
+        success: true,
+        message: 'Task deleted successfully',
+      });
       expect(service.remove).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw an error when task deletion fails', async () => {
+      mockTasksService.remove.mockRejectedValue(new Error('Database error'));
+
+      await expect(controller.remove(1)).rejects.toThrow(Error);
     });
   });
 });

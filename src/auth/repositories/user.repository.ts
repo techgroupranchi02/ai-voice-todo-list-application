@@ -9,22 +9,34 @@ export class UserRepository extends Repository<User> {
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { firstName, lastName, email, password } = createUserDto;
 
-    const saltRounds = process.env.BCRYPT_ROUNDS ? parseInt(process.env.BCRYPT_ROUNDS) : 12;
+    // Get BCRYPT_ROUNDS from environment with default value of 12
+    const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
     
-    const user = new User();
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.email = email;
-    user.password = await bcrypt.hash(password, saltRounds);
+    // Validate BCRYPT_ROUNDS is within acceptable range (10-15)
+    if (bcryptRounds < 10 || bcryptRounds > 15) {
+      throw new InternalServerErrorException('BCRYPT_ROUNDS must be between 10 and 15');
+    }
+
+    const salt = await bcrypt.genSalt(bcryptRounds);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = this.create({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+    });
 
     try {
-      return await user.save();
+      return await this.save(user);
     } catch (error) {
+      // Proper error handling - log sanitized error
       if (error.code === '23505') {
-        throw new ConflictException('Email already exists');
-      } else {
-        throw new InternalServerErrorException('Error creating user');
+        throw new ConflictException('An account with this email already exists.');
       }
+      // Log the actual error for debugging but don't expose it to client
+      console.error('Error creating user:', error);
+      throw new InternalServerErrorException('Error creating user');
     }
   }
 

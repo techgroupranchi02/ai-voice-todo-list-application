@@ -1,24 +1,2 @@
 
-## API Endpoints
-
-### Authentication
-- `POST /api/v1/auth/register` - Register a new user
-- `POST /api/v1/auth/login` - Login and get access token
-
-### Task Management
-- `POST /api/v1/tasks` - Create a new task (manual entry)
-- `POST /api/v1/tasks/voice` - Create a task from voice input
-- `POST /api/v1/teams/{team_id}/tasks` - Create a task within a team
-
-## Security Features
-
-- JWT-based authentication
-- Password hashing with Werkzeug
-- Input validation and sanitization
-- Environment variable configuration
-- Secure secret key handling
-- CSRF protection
-
-## Testing
-
-Run tests with:
+2. **Check running containers**

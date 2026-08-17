@@ -1,16 +1,12 @@
-// src/voice/dto/create-voice-task.dto.ts
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateVoiceTaskDto {
-  @IsNotEmpty({ message: 'Audio data is required.' })
-  @IsString({ message: 'Audio data must be a string.' })
+  @IsNotEmpty()
   audioData: string;
 
   @IsOptional()
-  @IsString({ message: 'Title must be a string.' })
-  title?: string;
+  transcript?: string;
 
   @IsOptional()
-  @IsString({ message: 'Transcript must be a string.' })
-  transcript?: string;
+  title?: string;
 }

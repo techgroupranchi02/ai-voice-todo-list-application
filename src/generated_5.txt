@@ -1,2 +1,2 @@
 
-## 📋 Prerequisites & Version Check
+## 📋 Prerequisites & Version Check Commands

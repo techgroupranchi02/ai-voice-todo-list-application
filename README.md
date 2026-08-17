@@ -1,6 +1,6 @@
-# Voice Task Manager
+# Voice Assistant Platform
 
-> Transform your productivity with voice-enabled task management powered by AI transcription and real-time collaboration.
+> A comprehensive voice assistant platform with speech recognition, transcription, and task management capabilities
 
 ## 📌 Table of Contents
 - [📖 About the Project](#-about-the-project)
@@ -25,52 +25,56 @@
 - [⭐ Support](#-support)
 
 ## 📖 About the Project
-Voice Task Manager is a revolutionary productivity application that combines voice recognition technology with task management to create an intuitive, hands-free workflow. Users can record voice commands to create, update, and complete tasks, while AI-powered transcription converts speech to text for better organization and searchability.
 
-The platform features real-time collaboration, smart task categorization, and seamless integration with existing productivity tools. Whether you're a busy professional, student, or anyone looking to boost their productivity, Voice Task Manager transforms how you manage your daily tasks through the power of voice.
+### Problem Statement
+Modern productivity tools often lack seamless voice interaction capabilities. Users struggle to efficiently manage tasks and access information through traditional interfaces, especially when multitasking or in hands-free environments.
+
+### Solution
+The Voice Assistant Platform provides a comprehensive solution that combines:
+- Real-time speech recognition and transcription
+- Natural language processing for task management
+- Seamless integration with productivity workflows
+- Multi-platform support (web and mobile)
 
 ## ✨ Features
-- 🎤 **Voice-Enabled Task Management**: Create, update, and complete tasks using natural speech commands
-- 🔊 **Real-time Transcription**: AI-powered speech-to-text conversion with live transcription feedback
-- 📝 **Smart Task Organization**: Automatic categorization and tagging of tasks based on voice content
-- 🔄 **Real-time Collaboration**: Share tasks and updates with team members in real-time
-- 📊 **Productivity Analytics**: Insights into task completion patterns and time management
-- 🔐 **Secure Authentication**: JWT-based authentication with refresh token rotation
-- 📱 **Cross-platform Support**: Mobile-first responsive design for all devices
-- ⚡ **Fast Performance**: Optimized backend with Redis caching and PostgreSQL database
-- 🌐 **RESTful API**: Comprehensive API for third-party integrations
+
+- 🎤 **Speech Recognition**: Real-time voice-to-text conversion with live transcription
+- 📝 **Task Management**: Create, update, and track tasks through voice commands
+- 🔍 **Natural Language Processing**: Understand complex voice instructions
+- 🔄 **Voice Interaction**: Full conversational interface for task management
+- 📊 **Analytics Dashboard**: Track productivity metrics and voice usage patterns
+- 🌐 **Multi-Platform Support**: Web and mobile applications with consistent experience
+- 🔒 **Secure Authentication**: JWT-based authentication with refresh token rotation
+- ⚡ **Real-time Communication**: WebSocket integration for live updates
 
 ## 🛠️ Tech Stack
+
 ### Backend
 - **Framework**: NestJS (Node.js)
 - **Language**: TypeScript
 - **Database**: PostgreSQL
 - **Cache**: Redis
-- **Authentication**: JWT with refresh tokens
+- **Authentication**: JWT, Passport.js
 - **API Documentation**: Swagger/OpenAPI
-- **Security**: Helmet.js, rate limiting
 
 ### Frontend
 - **Framework**: React Native (TypeScript)
-- **UI Library**: React Native components
+- **UI Library**: React Native Components
 - **State Management**: Redux Toolkit
-- **Navigation**: React Navigation
-- **API Client**: Axios
+- **Networking**: Axios
 
 ### Database
-- **Primary**: PostgreSQL with TypeORM
-- **Cache**: Redis for session and caching
+- **Primary**: PostgreSQL 15
+- **Cache**: Redis 7
 
 ### AI/Automation
-- **Speech Recognition**: Web Speech API + Whisper (OpenAI)
-- **Transcription**: Ollama integration for local AI processing
-- **Natural Language Processing**: AI-powered task categorization
+- **Speech Recognition**: Web Speech API
+- **Natural Language Processing**: Custom NLP engine
 
 ### DevOps
 - **Containerization**: Docker
 - **Orchestration**: Docker Compose
-- **CI/CD**: GitHub Actions
 - **Monitoring**: Winston logging
-- **Testing**: Jest, Supertest
+- **Security**: Helmet.js, Rate limiting
 
 ## 📂 Project Structure

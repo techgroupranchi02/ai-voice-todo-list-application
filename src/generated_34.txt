@@ -1,6 +1,41 @@
 
-## 🐛 Troubleshooting
+## 🔒 Security Guidelines
 
-### Common Issues and Solutions
+### Best Practices Implemented
+- ✅ JWT-based authentication with refresh token rotation
+- ✅ Password hashing with bcrypt (12 rounds)
+- ✅ Input validation using class-validator
+- ✅ Rate limiting on auth endpoints
+- ✅ Secure headers with helmet.js
+- ✅ Environment variable management
+- ✅ SQL injection prevention through TypeORM
+- ✅ CORS configuration
 
-1. **Database Connection Failed**
+### Security Recommendations
+1. **Regular Updates**: Keep all dependencies updated
+2. **Secret Management**: Never commit secrets to version control
+3. **Input Sanitization**: All user inputs are validated and sanitized
+4. **Access Control**: Implement proper RBAC for different user roles
+5. **Audit Logging**: Maintain logs of critical operations
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the UNLICENSED License.
+
+## 👨‍💻 Maintainer
+
+**Productivity App Team**
+
+## ⭐ Support
+
+If you find this project helpful, please consider giving it a star on GitHub!

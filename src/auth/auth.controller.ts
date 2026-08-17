@@ -1,66 +1,29 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+// src/auth/auth.controller.ts
+import { Controller, Post, Body, HttpStatus, HttpCode } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { ApiTags, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('Authentication')
 @Controller('api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @UsePipes(new ValidationPipe({ transform: true }))
+  @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'User registered successfully.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'An account with this email already exists.',
+  })
   async register(@Body() registerDto: RegisterDto) {
-    try {
-      const result = await this.authService.register(registerDto);
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      if (error.message === 'Email already exists') {
-        return {
-          success: false,
-          error: {
-            code: HttpStatus.CONFLICT,
-            message: 'An account with this email already exists.',
-          },
-        };
-      }
-      
-      throw error;
-    }
-  }
-
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async login(@Body() loginDto: LoginDto) {
-    try {
-      const result = await this.authService.login(loginDto);
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      if (error.message === 'Invalid credentials') {
-        return {
-          success: false,
-          error: {
-            code: HttpStatus.UNAUTHORIZED,
-            message: 'Invalid email or password.',
-          },
-        };
-      }
-      
-      throw error;
-    }
+    return await this.authService.register(registerDto);
   }
 }

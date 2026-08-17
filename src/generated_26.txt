@@ -1,2 +1,2 @@
 
-### End-to-End Tests
+### Nginx Configuration Example

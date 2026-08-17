@@ -1,4 +1,3 @@
-// src/tasks/tasks.controller.ts
 import {
   Controller,
   Get,
@@ -8,30 +7,27 @@ import {
   Put,
   Delete,
   ParseIntPipe,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@ApiTags('tasks')
 @Controller('api/v1/tasks')
+@UseGuards(JwtAuthGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new task' })
-  @ApiResponse({
-    status: 201,
-    description: 'Task created successfully',
-    type: CreateTaskDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input data',
-  })
-  async create(@Body() createTaskDto: CreateTaskDto) {
-    const task = await this.tasksService.create(createTaskDto);
+  async create(
+    @Body() createTaskDto: CreateTaskDto,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    const task = await this.tasksService.create(createTaskDto, userId);
+    
     return {
       success: true,
       data: {
@@ -42,14 +38,10 @@ export class TasksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all tasks' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all tasks',
-    type: [CreateTaskDto],
-  })
-  async findAll() {
-    const tasks = await this.tasksService.findAll();
+  async findAll(@Request() req) {
+    const userId = req.user.id;
+    const tasks = await this.tasksService.findAll(userId);
+    
     return {
       success: true,
       data: tasks,
@@ -57,18 +49,13 @@ export class TasksController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a task by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Task found',
-    type: CreateTaskDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    const task = await this.tasksService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    const task = await this.tasksService.findOne(id, userId);
+    
     return {
       success: true,
       data: task,
@@ -76,21 +63,14 @@ export class TasksController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update a task by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Task updated successfully',
-    type: CreateTaskDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTaskDto: UpdateTaskDto,
+    @Request() req,
   ) {
-    const task = await this.tasksService.update(id, updateTaskDto);
+    const userId = req.user.id;
+    const task = await this.tasksService.update(id, updateTaskDto, userId);
+    
     return {
       success: true,
       data: task,
@@ -98,17 +78,13 @@ export class TasksController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a task by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Task deleted successfully',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Task not found',
-  })
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.tasksService.remove(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    await this.tasksService.remove(id, userId);
+    
     return {
       success: true,
       data: {

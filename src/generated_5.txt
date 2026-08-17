@@ -1,4 +1,2 @@
 
 ## 📋 Prerequisites & Version Check
-
-Before installing and running the project, ensure you have the following installed:

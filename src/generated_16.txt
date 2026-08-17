@@ -1,4 +1,2 @@
 
-## 🔌 API Documentation
-
-### Base URL
+### 3. View Logs

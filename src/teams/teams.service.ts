@@ -1,77 +1,40 @@
-// src/teams/teams.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateTeamTaskDto } from './dto/create-team-task.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from '../tasks/entities/task.entity';
-import { User } from '../users/entities/user.entity';
+import { Team } from './entities/team.entity';
 
 @Injectable()
 export class TeamsService {
   constructor(
     @InjectRepository(Task)
-    private taskRepository: Repository<Task>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private tasksRepository: Repository<Task>,
+    @InjectRepository(Team)
+    private teamsRepository: Repository<Team>,
   ) {}
 
-  /**
-   * Creates a new task within a team
-   * @param teamId The ID of the team
-   * @param taskData The task data to create
-   * @returns The created task
-   */
-  async createTeamTask(teamId: string, taskData: any): Promise<Task> {
-    // Validate that the team exists (in this case, we'll assume team exists)
-    // In a real implementation, you would check if the team exists in the database
-    
-    const newTask = this.taskRepository.create({
-      ...taskData,
-      userId: taskData.assigneeId, // Assign to the specified user
+  async createTeamTask(teamId: string, createTeamTaskDto: CreateTeamTaskDto): Promise<{ taskId: string; message: string }> {
+    // Validate team exists
+    const team = await this.teamsRepository.findOne({
+      where: { id: parseInt(teamId) },
     });
 
-    return await this.taskRepository.save(newTask);
-  }
-
-  /**
-   * Gets all tasks for a specific team
-   * @param teamId The ID of the team
-   * @returns Array of tasks for the team
-   */
-  async getTeamTasks(teamId: string): Promise<Task[]> {
-    // In a real implementation, you would join with team members table
-    // For now, we'll return all tasks (this is a simplified version)
-    return await this.taskRepository.find({
-      order: {
-        createdAt: 'DESC',
-      },
-    });
-  }
-
-  /**
-   * Assigns a task to a team member
-   * @param taskId The ID of the task
-   * @param assigneeId The ID of the user to assign the task to
-   * @returns The updated task
-   */
-  async assignTaskToMember(taskId: string, assigneeId: string): Promise<Task> {
-    const task = await this.taskRepository.findOne({
-      where: { id: taskId },
-    });
-
-    if (!task) {
-      throw new NotFoundException('Task not found');
+    if (!team) {
+      throw new NotFoundException('The specified team does not exist.');
     }
 
-    // Validate that the assignee exists
-    const assignee = await this.userRepository.findOne({
-      where: { id: assigneeId },
+    // Create task
+    const task = this.tasksRepository.create({
+      ...createTeamTaskDto,
+      user_id: createTeamTaskDto.assigneeId ? parseInt(createTeamTaskDto.assigneeId) : null,
     });
 
-    if (!assignee) {
-      throw new NotFoundException('Assignee not found');
-    }
+    const savedTask = await this.tasksRepository.save(task);
 
-    task.userId = assigneeId;
-    return await this.taskRepository.save(task);
+    return {
+      taskId: savedTask.id.toString(),
+      message: 'Team task created successfully.',
+    };
   }
 }

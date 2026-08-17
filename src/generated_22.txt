@@ -1,2 +1,2 @@
 
-2. **Run migrations (if applicable)**
+2. **Run Migrations**:

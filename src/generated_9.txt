@@ -1,14 +1,2 @@
-version: '3.8'
 
-services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - SECRET_KEY=your-very-secure-secret-key-here
-      - JWT_SECRET_KEY=your-jwt-secret-key-here
-      - DATABASE_URL=sqlite:///todo.db
-      - FLASK_DEBUG=False
-    volumes:
-      - ./data:/app/data
+4. **Build the project**

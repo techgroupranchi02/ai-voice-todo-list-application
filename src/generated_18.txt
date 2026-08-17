@@ -1,3 +1,2 @@
 
-## 🔌 API Documentation
-### Base URL
+### Authentication Headers

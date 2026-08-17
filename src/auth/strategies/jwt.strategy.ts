@@ -1,6 +1,6 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -14,12 +14,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    // The payload is already validated by the strategy
+    // Validate that the user exists and is active
+    if (!payload || !payload.userId) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    
     return {
-      userId: payload.sub,
+      userId: payload.userId,
       email: payload.email,
-      firstName: payload.firstName,
-      lastName: payload.lastName,
     };
   }
 }

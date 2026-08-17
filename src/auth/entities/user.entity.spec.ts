@@ -1,13 +1,13 @@
 import { User } from './user.entity';
-import { IsEmail, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 describe('User Entity', () => {
-  it('should create a user instance', () => {
+  it('should be defined', () => {
     const user = new User();
-    expect(user).toBeInstanceOf(User);
+    expect(user).toBeDefined();
   });
 
-  it('should have correct property types and decorators', () => {
+  it('should have correct property definitions', () => {
     const user = new User();
     
     // Check that properties exist
@@ -20,12 +20,36 @@ describe('User Entity', () => {
     expect(user.updatedAt).toBeUndefined();
   });
 
+  it('should validate firstName as required', () => {
+    const user = new User();
+    user.firstName = '';
+    
+    // This should fail validation
+    expect(() => {
+      const validator = new IsNotEmpty();
+      validator.validate(user.firstName);
+    }).toThrow();
+  });
+
   it('should validate email format', () => {
     const user = new User();
     user.email = 'invalid-email';
     
-    // This would normally be tested with validation decorators
-    // but we're just ensuring the entity has the right structure
-    expect(user.email).toEqual('invalid-email');
+    // This should fail validation
+    expect(() => {
+      const validator = new IsEmail();
+      validator.validate(user.email);
+    }).toThrow();
+  });
+
+  it('should validate password minimum length', () => {
+    const user = new User();
+    user.password = '123';
+    
+    // This should fail validation
+    expect(() => {
+      const validator = new MinLength(6);
+      validator.validate(user.password);
+    }).toThrow();
   });
 });

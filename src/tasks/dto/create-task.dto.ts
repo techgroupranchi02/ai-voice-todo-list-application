@@ -1,24 +1,30 @@
-import { IsNotEmpty, IsOptional, IsEnum, IsDateString } from 'class-validator';
-import { TaskPriority } from '../entities/task.entity';
+import { IsNotEmpty, IsOptional, IsDate, IsNumber, IsBoolean, IsString } from 'class-validator';
 
 export class CreateTaskDto {
   @IsNotEmpty()
+  @IsString()
   title: string;
 
   @IsOptional()
-  description: string;
+  @IsString()
+  description?: string;
 
   @IsOptional()
-  @IsDateString()
-  dueDate: Date;
+  @IsDate()
+  dueDate?: Date;
+
+  @IsNotEmpty()
+  @IsNumber()
+  priority: number;
 
   @IsOptional()
-  @IsEnum(TaskPriority)
-  priority: TaskPriority;
+  @IsString()
+  category?: string;
 
-  @IsOptional()
-  category: string;
-
-  @IsOptional()
+  @IsNotEmpty()
+  @IsBoolean()
   completed: boolean;
+
+  @IsNotEmpty()
+  user: any; // This will be the user object from JWT
 }

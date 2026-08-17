@@ -1,2 +1,3 @@
 
-3. Run tests:
+## 🚀 Installation Steps
+1. **Clone the repository**

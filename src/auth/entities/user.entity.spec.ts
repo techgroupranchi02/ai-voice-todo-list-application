@@ -1,9 +1,8 @@
 import { User } from './user.entity';
 
 describe('User Entity', () => {
-  it('should create a user entity instance', () => {
-    const user = new User();
-    expect(user).toBeInstanceOf(User);
+  it('should be defined', () => {
+    expect(new User()).toBeDefined();
   });
 
   it('should have all required fields', () => {

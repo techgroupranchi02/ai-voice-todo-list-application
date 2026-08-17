@@ -1,4 +1,4 @@
 
-## 🔐 Environment Variables
+## ▶️ Running the Project
 
-Create a `.env` file in the root directory with the following variables:
+### Development Mode

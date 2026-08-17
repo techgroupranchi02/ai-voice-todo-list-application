@@ -1,36 +1,96 @@
 version: '3.8'
 
 services:
-  app:
+  # Backend API Service
+  backend:
     build: .
+    container_name: voice-task-manager-backend
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "8000:8000"
     environment:
-      - DB_HOST=postgres
+      - NODE_ENV=production
+      - PORT=8000
+      - DB_HOST=database
       - DB_PORT=5432
+      - DB_NAME=voice_task_manager
       - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=todo_app
-      - REDIS_URL=redis://redis:6379
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=supersecretjwtkey
+      - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
-      - postgres
+      - database
       - redis
+      - ollama
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
 
-  postgres:
+  # PostgreSQL Database Service
+  database:
     image: postgres:15-alpine
+    container_name: voice-task-manager-database
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: todo_app
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB=voice_task_manager
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
 
+  # Redis Cache Service
   redis:
     image: redis:7-alpine
+    container_name: voice-task-manager-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+  # Ollama AI Service for Transcription
+  ollama:
+    image: ollama/ollama:latest
+    container_name: voice-task-manager-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app-network
+
+  # Optional: Nginx reverse proxy (uncomment if needed)
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: voice-task-manager-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #     - ./ssl:/etc/nginx/ssl
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - app-network
 
 volumes:
   postgres_data:
+  redis_data:
+  ollama_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,8 +1,9 @@
-# Voice Assistant Platform
+# Voice Assistant App
 
-> A comprehensive voice assistant platform with speech recognition, transcription, and task management capabilities
+> A smart voice assistant application with speech recognition, task management, and real-time communication capabilities.
 
 ## 📌 Table of Contents
+
 - [📖 About the Project](#-about-the-project)
 - [✨ Features](#-features)
 - [🛠️ Tech Stack](#️-tech-stack)
@@ -27,54 +28,55 @@
 ## 📖 About the Project
 
 ### Problem Statement
-Modern productivity tools often lack seamless voice interaction capabilities. Users struggle to efficiently manage tasks and access information through traditional interfaces, especially when multitasking or in hands-free environments.
+Modern productivity tools often lack seamless voice interaction capabilities, making it difficult for users to efficiently manage tasks and communicate in real-time while maintaining focus on their work.
 
 ### Solution
-The Voice Assistant Platform provides a comprehensive solution that combines:
+This Voice Assistant App provides a comprehensive solution that combines:
 - Real-time speech recognition and transcription
-- Natural language processing for task management
-- Seamless integration with productivity workflows
-- Multi-platform support (web and mobile)
+- Task management with interactive status controls
+- WebSocket-based real-time communication
+- Secure authentication and authorization
+- Scalable backend architecture with NestJS
 
 ## ✨ Features
 
-- 🎤 **Speech Recognition**: Real-time voice-to-text conversion with live transcription
-- 📝 **Task Management**: Create, update, and track tasks through voice commands
-- 🔍 **Natural Language Processing**: Understand complex voice instructions
-- 🔄 **Voice Interaction**: Full conversational interface for task management
-- 📊 **Analytics Dashboard**: Track productivity metrics and voice usage patterns
-- 🌐 **Multi-Platform Support**: Web and mobile applications with consistent experience
-- 🔒 **Secure Authentication**: JWT-based authentication with refresh token rotation
-- ⚡ **Real-time Communication**: WebSocket integration for live updates
+- 🎤 **Voice Recognition & Transcription**: Real-time speech-to-text conversion using Web Speech API
+- 📋 **Task Management**: Create, update, complete tasks with interactive UI controls
+- 🔗 **Real-Time Communication**: WebSocket integration for live updates and notifications
+- 🔐 **Secure Authentication**: JWT-based authentication with refresh token rotation
+- 📊 **Task Status Tracking**: Visual indicators for task completion status with filtering
+- 🌐 **Responsive UI**: Mobile-first design compatible with all device sizes
+- 🛡️ **Security**: Helmet.js protection, rate limiting, input validation
+- 📈 **Monitoring**: Winston logging and performance monitoring
 
 ## 🛠️ Tech Stack
 
 ### Backend
 - **Framework**: NestJS (Node.js)
 - **Language**: TypeScript
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL with TypeORM
 - **Cache**: Redis
 - **Authentication**: JWT, Passport.js
+- **Real-time**: WebSocket, Socket.IO
 - **API Documentation**: Swagger/OpenAPI
 
 ### Frontend
 - **Framework**: React Native (TypeScript)
-- **UI Library**: React Native Components
-- **State Management**: Redux Toolkit
-- **Networking**: Axios
+- **UI Library**: React Native components
+- **State Management**: React hooks and context API
+- **Networking**: Axios for HTTP requests
 
 ### Database
-- **Primary**: PostgreSQL 15
-- **Cache**: Redis 7
+- **Primary**: PostgreSQL
+- **Cache**: Redis
 
 ### AI/Automation
 - **Speech Recognition**: Web Speech API
-- **Natural Language Processing**: Custom NLP engine
+- **Natural Language Processing**: Ollama integration (planned)
 
 ### DevOps
 - **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **Monitoring**: Winston logging
-- **Security**: Helmet.js, Rate limiting
+- **CI/CD**: GitHub Actions (planned)
+- **Monitoring**: Winston logging, PM2 process manager
 
 ## 📂 Project Structure

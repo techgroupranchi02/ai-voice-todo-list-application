@@ -1,12 +1,25 @@
+// src/tasks/tasks.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksController } from './tasks.controller';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 describe('TasksController', () => {
   let controller: TasksController;
-  let tasksService: TasksService;
+  let service: TasksService;
+
+  const mockTask = {
+    id: 1,
+    title: 'Test Task',
+    description: 'Test Description',
+    dueDate: new Date(),
+    priority: 1,
+    category: 'Personal',
+    completed: false,
+  };
+
+  const mockTasks = [mockTask];
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,16 +28,18 @@ describe('TasksController', () => {
         {
           provide: TasksService,
           useValue: {
-            create: jest.fn(),
-            createFromVoice: jest.fn(),
-            createInTeam: jest.fn(),
+            create: jest.fn().mockResolvedValue(mockTask),
+            findAll: jest.fn().mockResolvedValue(mockTasks),
+            findOne: jest.fn().mockResolvedValue(mockTask),
+            update: jest.fn().mockResolvedValue(mockTask),
+            remove: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
     }).compile();
 
     controller = module.get<TasksController>(TasksController);
-    tasksService = module.get<TasksService>(TasksService);
+    service = module.get<TasksService>(TasksService);
   });
 
   it('should be defined', () => {
@@ -32,76 +47,74 @@ describe('TasksController', () => {
   });
 
   describe('create', () => {
-    it('should create a task successfully', async () => {
+    it('should create a task and return success response', async () => {
       const createTaskDto: CreateTaskDto = {
-        title: 'Grocery Shopping',
-        description: 'Buy milk, eggs, and bread.',
-        dueDate: new Date('2024-03-15'),
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
         priority: 1,
         category: 'Personal',
       };
 
-      const result = { taskId: 'a1b2c3d4-e5f6-7890-1234-567890abcdef' };
-      
-      jest.spyOn(tasksService, 'create').mockResolvedValue(result);
-
-      expect(await controller.create(createTaskDto, { user: { userId: 'user-id' } })).toEqual({
+      const result = await controller.create(createTaskDto);
+      expect(result).toEqual({
         success: true,
-        data: result,
-      });
-    });
-
-    it('should handle invalid input error', async () => {
-      const createTaskDto: CreateTaskDto = {
-        title: '',
-        description: 'Buy milk, eggs, and bread.',
-        dueDate: new Date('2024-03-15'),
-        priority: 1,
-        category: 'Personal',
-      };
-
-      jest.spyOn(tasksService, 'create').mockRejectedValue(new Error('Invalid input'));
-
-      expect(await controller.create(createTaskDto, { user: { userId: 'user-id' } })).toEqual({
-        success: false,
-        error: {
-          code: 400,
-          message: 'Title cannot be empty.',
+        data: {
+          taskId: mockTask.id,
+          message: 'Task created successfully.',
         },
       });
+      expect(service.create).toHaveBeenCalledWith(createTaskDto);
     });
   });
 
-  describe('createFromVoice', () => {
-    it('should create a task from voice successfully', async () => {
-      const createVoiceTaskDto: CreateVoiceTaskDto = {
-        audioData: 'base64-encoded-audio-data',
-      };
-
-      const result = { taskId: 'f1g2h3i4-j5k6-l7m8-90ab-cdefghijklmn' };
-      
-      jest.spyOn(tasksService, 'createFromVoice').mockResolvedValue(result);
-
-      expect(await controller.createFromVoice(createVoiceTaskDto, { user: { userId: 'user-id' } })).toEqual({
+  describe('findAll', () => {
+    it('should return all tasks with success response', async () => {
+      const result = await controller.findAll();
+      expect(result).toEqual({
         success: true,
-        data: result,
+        data: mockTasks,
       });
+      expect(service.findAll).toHaveBeenCalled();
     });
+  });
 
-    it('should handle audio processing error', async () => {
-      const createVoiceTaskDto: CreateVoiceTaskDto = {
-        audioData: 'base64-encoded-audio-data',
+  describe('findOne', () => {
+    it('should return a task with success response', async () => {
+      const result = await controller.findOne(1);
+      expect(result).toEqual({
+        success: true,
+        data: mockTask,
+      });
+      expect(service.findOne).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('update', () => {
+    it('should update a task and return success response', async () => {
+      const updateTaskDto: UpdateTaskDto = {
+        title: 'Updated Task',
       };
 
-      jest.spyOn(tasksService, 'createFromVoice').mockRejectedValue(new Error('Audio processing error'));
+      const result = await controller.update(1, updateTaskDto);
+      expect(result).toEqual({
+        success: true,
+        data: mockTask,
+      });
+      expect(service.update).toHaveBeenCalledWith(1, updateTaskDto);
+    });
+  });
 
-      expect(await controller.createFromVoice(createVoiceTaskDto, { user: { userId: 'user-id' } })).toEqual({
-        success: false,
-        error: {
-          code: 500,
-          message: 'Error processing the audio data.',
+  describe('remove', () => {
+    it('should remove a task and return success response', async () => {
+      const result = await controller.remove(1);
+      expect(result).toEqual({
+        success: true,
+        data: {
+          message: 'Task deleted successfully.',
         },
       });
+      expect(service.remove).toHaveBeenCalledWith(1);
     });
   });
 });

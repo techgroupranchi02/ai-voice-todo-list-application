@@ -1,13 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../../auth/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
 
 @Entity('tasks')
@@ -15,11 +7,7 @@ export class Task {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ManyToOne(() => User, (user) => user.tasks)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @Column({ type: 'bigint', name: 'user_id' })
+  @Column({ name: 'user_id', type: 'bigint' })
   userId: number;
 
   @Column({ type: 'varchar', length: 255 })
@@ -28,25 +16,30 @@ export class Task {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ name: 'due_date', type: 'timestamp', nullable: true })
   dueDate: Date;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'int' })
   priority: number;
 
-  @ManyToOne(() => Category, (category) => category.tasks)
-  @JoinColumn({ name: 'category_id' })
-  category: Category;
-
-  @Column({ type: 'bigint', name: 'category_id', nullable: true })
+  @Column({ name: 'category_id', type: 'bigint', nullable: true })
   categoryId: number;
 
   @Column({ type: 'boolean', default: false })
   completed: boolean;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  // Relations
+  @ManyToOne(() => User, user => user.tasks)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @ManyToOne(() => Category, category => category.tasks)
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
 }

@@ -1,22 +1,10 @@
 
-### Sample Endpoints
-
-#### Auth
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - Login user
-- `POST /auth/logout` - Logout user
-
-#### Tasks
-- `GET /tasks` - Get all tasks
-- `POST /tasks` - Create new task
-- `GET /tasks/:id` - Get specific task
-- `PATCH /tasks/:id` - Update task
-- `PATCH /tasks/:id/toggle` - Toggle task completion
-
-#### Voice
-- `POST /voice/transcribe` - Transcribe audio to text
-- `POST /voice/record` - Record and process voice input
-
 ## 🗄️ Database Setup & Migration
 
-1. **Create PostgreSQL database**
+### Prerequisites
+- PostgreSQL server running
+- Database user with appropriate permissions
+
+### Setup Steps
+
+1. **Create Database**:

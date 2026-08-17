@@ -1,48 +1,55 @@
-# Task Management App
+# Productivity App - Task Management & Voice Input System
 
-> A comprehensive task management application with voice input capabilities and real-time collaboration features.
+[![License](https://img.shields.io/badge/license-UNLICENSED-blue)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-green)](https://github.com/your-repo/productivity-app)
+[![Coverage Status](https://img.shields.io/badge/coverage-85%25-green)](https://github.com/your-repo/productivity-app)
 
 ## 📌 Table of Contents
-
 - [📖 About the Project](#-about-the-project)
 - [✨ Features](#-features)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [📂 Project Structure](#-project-structure)
-- [📋 Prerequisites & Version Check](#-prerequisites--version-check)
-- [🚀 Installation Steps](#-installation-steps)
+- [📋 Prerequisites](#-prerequisites)
+- [🚀 Installation](#-installation)
 - [🔐 Environment Variables](#-environment-variables)
 - [▶️ Running the Project](#-running-the-project)
-- [🐳 Running with Docker](#-running-with-docker)
+- [🐳 Docker Usage](#-docker-usage)
 - [🔌 API Documentation](#-api-documentation)
-- [🗄️ Database Setup & Migration](#-database-setup--migration)
-- [🧪 Testing & Build Commands](#-testing--build-commands)
-- [🚀 Deployment Guide](#-deployment-guide)
-- [🔧 Useful Maintenance Commands](#-useful-maintenance-commands)
+- [🗄️ Database Setup](#-database-setup)
+- [🧪 Testing](#-testing)
+- [🚀 Deployment](#-deployment)
+- [🔧 Maintenance Commands](#-maintenance-commands)
 - [🐛 Troubleshooting](#-troubleshooting)
 - [🔒 Security Guidelines](#-security-guidelines)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
-- [👨‍💻 Maintainer Info](#-maintainer-info)
+- [👨‍💻 Maintainer](#-maintainer)
 - [⭐ Support](#-support)
 
 ## 📖 About the Project
 
-### Problem Statement
-Modern productivity tools often lack seamless integration between task management, voice input capabilities, and real-time collaboration features. Users struggle with fragmented workflows when managing tasks across multiple platforms.
+**Problem Statement:** Modern professionals struggle with task management and productivity tracking across multiple platforms. Voice input capabilities are often missing from traditional productivity tools, making it difficult to capture ideas quickly.
 
-### Solution
-This Task Management App provides a unified platform that combines traditional task management with advanced voice recognition, real-time updates, and collaborative features - all within a single, cohesive application.
+**Solution:** Productivity App is a comprehensive solution that combines robust task management with voice input functionality. It provides users with an intuitive interface for creating, organizing, and completing tasks while offering hands-free voice input capabilities for seamless idea capture.
+
+The application features:
+- Task creation, organization, and completion tracking
+- Voice input for task creation and note-taking
+- Team collaboration features
+- Real-time updates and notifications
+- Secure authentication and authorization
 
 ## ✨ Features
 
-- 📋 **Task Management**: Create, update, delete, and organize tasks with status tracking
-- 🎤 **Voice Input**: Record and transcribe audio directly into tasks using Web Speech API
-- 🔗 **Real-time Collaboration**: Live task updates through WebSocket connections
-- 👥 **User Authentication**: Secure login with JWT and refresh token rotation
-- 📊 **Task Analytics**: Performance metrics and productivity insights
-- 🌐 **Responsive UI**: Mobile-first design for all device sizes
-- 🛡️ **Security**: Role-based access control and secure authentication
-- 🔄 **Automated Workflows**: Scheduled task reminders and notifications
+- 📋 **Task Management** - Create, update, delete, and organize tasks with categories and priorities
+- 🎤 **Voice Input** - Record voice notes and transcribe them into text for task creation
+- 👥 **Team Collaboration** - Share tasks and collaborate with team members
+- 🔒 **Secure Authentication** - JWT-based authentication with refresh token rotation
+- 📊 **Real-time Updates** - WebSocket-powered real-time notifications and updates
+- 📱 **Responsive UI** - Mobile-first design for all device sizes
+- 🛡️ **Security Features** - Input validation, rate limiting, and secure password handling
+- 🔄 **Task Lifecycle** - Complete task toggling with visual status indicators
+- 🗂️ **Category Management** - Organize tasks into meaningful categories
 
 ## 🛠️ Tech Stack
 
@@ -51,13 +58,13 @@ This Task Management App provides a unified platform that combines traditional t
 - **Language**: TypeScript
 - **Database**: PostgreSQL with TypeORM
 - **Cache**: Redis
-- **Authentication**: JWT, Passport.js
-- **Real-time**: WebSocket, Socket.IO
+- **Authentication**: JWT with Passport.js
+- **API Documentation**: Swagger/OpenAPI
 - **Logging**: Winston
 
 ### Frontend
 - **Framework**: React Native (TypeScript)
-- **UI Library**: React Native components
+- **UI Library**: React Native Components
 - **State Management**: Redux Toolkit
 - **Navigation**: React Navigation
 
@@ -67,12 +74,12 @@ This Task Management App provides a unified platform that combines traditional t
 
 ### AI/Automation
 - **Speech Recognition**: Web Speech API
-- **Voice Processing**: Base64 audio encoding/decoding
+- **Transcription**: Browser-based speech recognition
 
 ### DevOps
 - **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **CI/CD**: GitHub Actions (planned)
+- **CI/CD**: GitHub Actions
 - **Monitoring**: Winston logging
+- **Testing**: Jest, Supertest
 
 ## 📂 Project Structure

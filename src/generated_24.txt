@@ -1,2 +1,2 @@
 
-### Migration Commands
+### Linting and Formatting

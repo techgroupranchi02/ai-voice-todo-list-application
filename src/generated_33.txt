@@ -1,3 +1,2 @@
 
-## 🔧 Useful Maintenance Commands
-### Database Maintenance
+2. **Database Connection Issues**

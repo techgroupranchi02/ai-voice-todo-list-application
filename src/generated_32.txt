@@ -1,2 +1,6 @@
 
-### Nginx Reverse Proxy Setup
+## 🐛 Troubleshooting
+
+### Common Issues and Solutions
+
+1. **Port Already in Use**

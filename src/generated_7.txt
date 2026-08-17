@@ -1,2 +1,4 @@
 
-2. **Install dependencies**
+## 🚀 Installation Steps
+
+1. **Clone the repository**

@@ -1,4 +1,4 @@
 
 ## 🐳 Running with Docker
 
-1. **Build the Docker image**
+### Building and Starting Containers

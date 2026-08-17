@@ -11,27 +11,30 @@ services:
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=voice_assistant_db
-      - DB_USER=voice_user
-      - DB_PASSWORD=voice_password
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres_password
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=your_jwt_secret_key_here
+      - OLLAMA_API_URL=http://ollama:11434
     depends_on:
       - postgres
       - redis
-    volumes:
-      - ./logs:/app/logs
+    networks:
+      - app-network
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     environment:
       - POSTGRES_DB=voice_assistant_db
-      - POSTGRES_USER=voice_user
-      - POSTGRES_PASSWORD=voice_password
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - app-network
 
   redis:
     image: redis:7-alpine
@@ -39,7 +42,13 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  app-network:
+    driver: bridge

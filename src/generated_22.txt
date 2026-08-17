@@ -1,6 +1,2 @@
 
-## 🗄️ Database Setup & Migration
-
-### PostgreSQL Setup
-1. Install PostgreSQL 15
-2. Create database and user:
+2. **Run migrations (if applicable)**

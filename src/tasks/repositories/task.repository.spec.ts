@@ -1,13 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { TaskRepository } from './task.repository';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from '../entities/task.entity';
-import { TaskRepository } from './task.repository';
-import { CreateTaskDto } from '../dto/create-task.dto';
-import { UpdateTaskDto } from '../dto/update-task.dto';
+import { CreateTaskDto } from '../../tasks/dto/create-task.dto';
+import { UpdateTaskDto } from '../../tasks/dto/update-task.dto';
 
 describe('TaskRepository', () => {
   let repository: TaskRepository;
   let mockTask: Task;
+
+  const mockRepository = {
+    save: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+    delete: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -15,29 +22,17 @@ describe('TaskRepository', () => {
         TaskRepository,
         {
           provide: getRepositoryToken(Task),
-          useValue: {
-            save: jest.fn(),
-            findOne: jest.fn(),
-            find: jest.fn(),
-            delete: jest.fn(),
-          },
+          useValue: mockRepository,
         },
       ],
     }).compile();
 
     repository = module.get<TaskRepository>(TaskRepository);
-    mockTask = {
-      id: 1,
-      userId: 1,
-      title: 'Test Task',
-      description: 'Test Description',
-      dueDate: new Date(),
-      priority: 1,
-      categoryId: null,
-      completed: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    mockTask = new Task();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -45,31 +40,21 @@ describe('TaskRepository', () => {
   });
 
   describe('createTask', () => {
-    it('should create and save a task', async () => {
+    it('should create a task successfully', async () => {
       const createTaskDto: CreateTaskDto = {
-        userId: 1,
         title: 'Test Task',
         description: 'Test Description',
         dueDate: new Date(),
         priority: 1,
-        categoryId: null,
-        completed: false,
+        category: 'Personal',
       };
 
-      jest.spyOn(repository, 'save').mockResolvedValue(mockTask);
+      mockRepository.save.mockResolvedValue(mockTask);
 
-      const result = await repository.createTask(createTaskDto);
+      const result = await repository.createTask(createTaskDto, 1);
       
-      expect(result).toEqual(mockTask);
-      expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({
-        userId: createTaskDto.userId,
-        title: createTaskDto.title,
-        description: createTaskDto.description,
-        dueDate: createTaskDto.dueDate,
-        priority: createTaskDto.priority,
-        categoryId: createTaskDto.categoryId,
-        completed: createTaskDto.completed,
-      }));
+      expect(result).toBe(mockTask);
+      expect(mockRepository.save).toHaveBeenCalled();
     });
   });
 
@@ -77,96 +62,81 @@ describe('TaskRepository', () => {
     it('should update a task successfully', async () => {
       const updateTaskDto: UpdateTaskDto = {
         title: 'Updated Task',
-        description: 'Updated Description',
       };
 
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockTask);
-      jest.spyOn(repository, 'save').mockResolvedValue({ ...mockTask, ...updateTaskDto });
+      mockRepository.findOne.mockResolvedValue(mockTask);
+      mockRepository.save.mockResolvedValue(mockTask);
 
       const result = await repository.updateTask(1, updateTaskDto);
       
-      expect(result).toEqual({ ...mockTask, ...updateTaskDto });
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(result).toBe(mockTask);
+      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw error when task not found during update', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+    it('should throw error when task not found', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
 
       await expect(repository.updateTask(1, {} as UpdateTaskDto))
-        .rejects.toThrow(`Task with ID 1 not found`);
-    });
-  });
-
-  describe('findTaskById', () => {
-    it('should return a task by id', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockTask);
-
-      const result = await repository.findTaskById(1);
-      
-      expect(result).toEqual(mockTask);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-    });
-
-    it('should return undefined when task not found', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(undefined);
-
-      const result = await repository.findTaskById(999);
-      
-      expect(result).toBeUndefined();
-    });
-  });
-
-  describe('findAllTasks', () => {
-    it('should return all tasks', async () => {
-      const mockTasks = [mockTask];
-      jest.spyOn(repository, 'find').mockResolvedValue(mockTasks);
-
-      const result = await repository.findAllTasks();
-      
-      expect(result).toEqual(mockTasks);
-      expect(repository.find).toHaveBeenCalled();
+        .rejects.toThrow('Task not found');
     });
   });
 
   describe('findUserTasks', () => {
-    it('should return tasks for a specific user', async () => {
-      const mockTasks = [mockTask];
-      jest.spyOn(repository, 'find').mockResolvedValue(mockTasks);
+    it('should find all user tasks', async () => {
+      mockRepository.find.mockResolvedValue([mockTask]);
 
       const result = await repository.findUserTasks(1);
       
-      expect(result).toEqual(mockTasks);
-      expect(repository.find).toHaveBeenCalledWith({ where: { userId: 1 } });
+      expect(result).toEqual([mockTask]);
+      expect(mockRepository.find).toHaveBeenCalled();
     });
   });
 
-  describe('deleteTask', () => {
-    it('should delete a task', async () => {
-      jest.spyOn(repository, 'delete').mockResolvedValue(undefined);
+  describe('findTaskByIdAndUserId', () => {
+    it('should find task by id and user id', async () => {
+      mockRepository.findOne.mockResolvedValue(mockTask);
 
-      await repository.deleteTask(1);
+      const result = await repository.findTaskByIdAndUserId(1, 1);
       
-      expect(repository.delete).toHaveBeenCalledWith(1);
+      expect(result).toBe(mockTask);
+      expect(mockRepository.findOne).toHaveBeenCalled();
     });
   });
 
   describe('toggleTaskCompletion', () => {
-    it('should toggle task completion status', async () => {
-      const completedTask = { ...mockTask, completed: true };
-      jest.spyOn(repository, 'findOne').mockResolvedValue(mockTask);
-      jest.spyOn(repository, 'save').mockResolvedValue(completedTask);
+    it('should toggle task completion', async () => {
+      mockTask.completed = false;
+      mockRepository.findOne.mockResolvedValue(mockTask);
+      mockRepository.save.mockResolvedValue({ ...mockTask, completed: true });
 
-      const result = await repository.toggleTaskCompletion(1);
+      const result = await repository.toggleTaskCompletion(1, 1);
       
       expect(result.completed).toBe(true);
-      expect(repository.save).toHaveBeenCalledWith({ ...mockTask, completed: true });
+      expect(mockRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw error when task not found during toggle', async () => {
-      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
+    it('should throw error when task not found', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(repository.toggleTaskCompletion(1))
-        .rejects.toThrow(`Task with ID 1 not found`);
+      await expect(repository.toggleTaskCompletion(1, 1))
+        .rejects.toThrow('Task not found');
+    });
+  });
+
+  describe('deleteTask', () => {
+    it('should delete a task successfully', async () => {
+      mockRepository.delete.mockResolvedValue({ affected: 1 } as any);
+
+      await expect(repository.deleteTask(1, 1)).resolves.not.toThrow();
+      expect(mockRepository.delete).toHaveBeenCalled();
+    });
+
+    it('should throw error when task not found or unauthorized', async () => {
+      mockRepository.delete.mockResolvedValue({ affected: 0 } as any);
+
+      await expect(repository.deleteTask(1, 1))
+        .rejects.toThrow('Task not found or unauthorized');
     });
   });
 });

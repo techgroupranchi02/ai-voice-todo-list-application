@@ -1,4 +1,2 @@
 
-## 🔌 API Documentation
-
-### Base URL
+4. **View container logs**

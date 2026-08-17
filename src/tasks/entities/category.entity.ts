@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 @Entity('categories')
 export class Category {
-  @PrimaryGeneratedColumn('bigserial')
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
@@ -11,9 +11,9 @@ export class Category {
   @IsNotEmpty()
   name: string;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', nullable: false })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 }

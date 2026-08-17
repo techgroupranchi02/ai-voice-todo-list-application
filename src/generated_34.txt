@@ -1,2 +1,6 @@
 
-3. **Docker Container Issues**
+## 🐛 Troubleshooting
+
+### Common Issues and Solutions
+
+1. **Database Connection Failed**

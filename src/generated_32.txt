@@ -1,6 +1,2 @@
 
-## 🐛 Troubleshooting
-
-### Common Issues and Solutions
-
-1. **Port Already in Use**
+### Cache Management

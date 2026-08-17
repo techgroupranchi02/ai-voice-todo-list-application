@@ -1,2 +1,6 @@
 
-### PM2 Deployment (Alternative)
+## 🐛 Troubleshooting
+
+### Common Issues and Solutions
+
+1. **Database Connection Failed**

@@ -1,3 +1,2 @@
 
-## 🐳 Running with Docker
-1. **Build and start containers**
+### Testing

@@ -17,39 +17,42 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus();
 
-    const exceptionResponse = exception.getResponse();
-    let message = 'Internal server error';
+    // Log the error
+    this.logger.error({
+      statusCode: status,
+      message: exception.message,
+      stack: exception.stack,
+      timestamp: new Date().toISOString(),
+      path: ctx.getRequest().url,
+    });
 
-    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-      if ('message' in exceptionResponse) {
-        message = Array.isArray(exceptionResponse.message)
-          ? exceptionResponse.message.join(', ')
-          : exceptionResponse.message;
-      } else if ('error' in exceptionResponse) {
-        message = exceptionResponse.error;
-      }
-    } else if (typeof exceptionResponse === 'string') {
-      message = exceptionResponse;
-    }
-
+    // Format error response
     const errorResponse = {
       success: false,
       error: {
-        status: status,
-        message: message,
+        statusCode: status,
+        message: this.getErrorMessage(exception),
         timestamp: new Date().toISOString(),
         path: ctx.getRequest().url,
       },
     };
 
-    this.logger.error({
-      statusCode: status,
-      message: message,
-      path: ctx.getRequest().url,
-      timestamp: new Date().toISOString(),
-      stack: exception.stack,
-    });
-
     response.status(status).json(errorResponse);
+  }
+
+  private getErrorMessage(exception: HttpException): string {
+    const message = exception.message;
+    
+    // Handle specific error cases
+    if (message === 'Email already exists') {
+      return 'Registration failed';
+    }
+    
+    if (message === 'Invalid credentials') {
+      return 'Invalid credentials';
+    }
+    
+    // Return the original message for other cases
+    return message;
   }
 }

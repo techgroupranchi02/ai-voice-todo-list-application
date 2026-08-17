@@ -24,7 +24,7 @@ describe('CategoryRepository', () => {
     expect(repository).toBeDefined();
   });
 
-  it('should extend Repository class', () => {
+  it('should extend Repository', () => {
     expect(repository).toBeInstanceOf(CategoryRepository);
   });
 });

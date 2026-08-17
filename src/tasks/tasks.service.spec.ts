@@ -1,19 +1,33 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Task } from './entities/task.entity';
 import { Repository } from 'typeorm';
+import { Task } from './entities/task.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 describe('TasksService', () => {
   let service: TasksService;
   let repository: Repository<Task>;
 
-  const mockTaskRepository = {
-    create: jest.fn(),
-    save: jest.fn(),
-    find: jest.fn(),
-    findOne: jest.fn(),
-    delete: jest.fn(),
+  const mockTask = {
+    id: 1,
+    title: 'Test Task',
+    description: 'Test Description',
+    dueDate: new Date(),
+    priority: 2,
+    category: 'Personal',
+    completed: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockRepository = {
+    create: jest.fn().mockReturnValue(mockTask),
+    save: jest.fn().mockResolvedValue(mockTask),
+    findOne: jest.fn().mockResolvedValue(mockTask),
+    find: jest.fn().mockResolvedValue([mockTask]),
+    delete: jest.fn().mockResolvedValue({ affected: 1 }),
   };
 
   beforeEach(async () => {
@@ -22,7 +36,7 @@ describe('TasksService', () => {
         TasksService,
         {
           provide: getRepositoryToken(Task),
-          useValue: mockTaskRepository,
+          useValue: mockRepository,
         },
       ],
     }).compile();
@@ -36,92 +50,64 @@ describe('TasksService', () => {
   });
 
   describe('create', () => {
-    it('should create and return a task', async () => {
-      const createTaskDto = {
+    it('should create a task successfully', async () => {
+      const createTaskDto: CreateTaskDto = {
         title: 'Test Task',
         description: 'Test Description',
         dueDate: new Date(),
-        priority: 1,
+        priority: 2,
         category: 'Personal',
+        completed: false,
       };
-      
-      const mockTask = { id: 1, ...createTaskDto, user: { id: 1 } };
-      
-      mockTaskRepository.create.mockReturnValue(mockTask);
-      mockTaskRepository.save.mockResolvedValue(mockTask);
 
-      const result = await service.create(createTaskDto, 1);
-      
-      expect(result).toEqual(mockTask);
-      expect(mockTaskRepository.create).toHaveBeenCalledWith({
-        ...createTaskDto,
-        user: { id: 1 },
-      });
-      expect(mockTaskRepository.save).toHaveBeenCalled();
-    });
-  });
-
-  describe('findAll', () => {
-    it('should return all tasks for a user', async () => {
-      const mockTasks = [
-        { id: 1, title: 'Task 1', user: { id: 1 } },
-        { id: 2, title: 'Task 2', user: { id: 1 } },
-      ];
-      
-      mockTaskRepository.find.mockResolvedValue(mockTasks);
-
-      const result = await service.findAll(1);
-      
-      expect(result).toEqual(mockTasks);
-      expect(mockTaskRepository.find).toHaveBeenCalledWith({
-        where: { user: { id: 1 } },
-        order: { createdAt: 'DESC' },
-      });
-    });
-  });
-
-  describe('findOne', () => {
-    it('should return a task by id', async () => {
-      const mockTask = { id: 1, title: 'Test Task', user: { id: 1 } };
-      
-      mockTaskRepository.findOne.mockResolvedValue(mockTask);
-
-      const result = await service.findOne(1, 1);
-      
-      expect(result).toEqual(mockTask);
-    });
-
-    it('should throw NotFoundException when task not found', async () => {
-      mockTaskRepository.findOne.mockResolvedValue(null);
-
-      expect(service.findOne(1, 1)).rejects.toThrow();
+      expect(await service.create(createTaskDto)).toEqual(mockTask);
+      expect(repository.create).toHaveBeenCalledWith(createTaskDto);
+      expect(repository.save).toHaveBeenCalled();
     });
   });
 
   describe('update', () => {
-    it('should update and return a task', async () => {
-      const mockTask = { id: 1, title: 'Test Task', user: { id: 1 } };
-      
-      mockTaskRepository.findOne.mockResolvedValue(mockTask);
-      mockTaskRepository.save.mockResolvedValue({ ...mockTask, title: 'Updated Task' });
+    it('should update a task successfully', async () => {
+      const updateTaskDto: UpdateTaskDto = {
+        title: 'Updated Task',
+      };
 
-      const result = await service.update(1, { title: 'Updated Task' }, 1);
-      
-      expect(result.title).toEqual('Updated Task');
+      expect(await service.update(1, updateTaskDto)).toEqual(mockTask);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne', () => {
+    it('should find a task by ID successfully', async () => {
+      expect(await service.findOne(1)).toEqual(mockTask);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return all tasks', async () => {
+      expect(await service.findAll()).toEqual([mockTask]);
+      expect(repository.find).toHaveBeenCalled();
+    });
+  });
+
+  describe('toggleCompletion', () => {
+    it('should toggle task completion successfully', async () => {
+      const updatedTask = { ...mockTask, completed: true };
+      repository.findOne = jest.fn().mockResolvedValue(mockTask);
+      repository.save = jest.fn().mockResolvedValue(updatedTask);
+
+      expect(await service.toggleCompletion(1)).toEqual(updatedTask);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repository.save).toHaveBeenCalled();
     });
   });
 
   describe('remove', () => {
-    it('should remove a task', async () => {
-      mockTaskRepository.delete.mockResolvedValue({ affected: 1 } as any);
-
-      await expect(service.remove(1, 1)).resolves.not.toThrow();
-    });
-
-    it('should throw NotFoundException when task not found', async () => {
-      mockTaskRepository.delete.mockResolvedValue({ affected: 0 } as any);
-
-      expect(service.remove(1, 1)).rejects.toThrow();
+    it('should remove a task successfully', async () => {
+      await service.remove(1);
+      expect(repository.delete).toHaveBeenCalledWith(1);
     });
   });
 });

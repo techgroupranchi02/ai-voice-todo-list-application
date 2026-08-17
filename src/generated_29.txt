@@ -1,2 +1,2 @@
 
-## 🔧 Useful Maintenance Commands
+### Nginx Configuration (Example)

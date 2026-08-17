@@ -1,2 +1,14 @@
 
-2. Install dependencies:
+### Sample Endpoints
+- **POST** `/auth/register` - Register a new user
+- **POST** `/auth/login` - Login and get JWT token
+- **GET** `/tasks` - Get all tasks
+- **POST** `/tasks` - Create a new task
+- **PATCH** `/tasks/:id` - Update a task
+- **DELETE** `/tasks/:id` - Delete a task
+- **POST** `/voice/transcribe` - Transcribe voice recording
+
+## 🗄️ Database Setup & Migration
+### Local PostgreSQL Setup
+1. Install PostgreSQL
+2. Create database:

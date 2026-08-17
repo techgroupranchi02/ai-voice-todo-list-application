@@ -1,66 +1,66 @@
-// src/auth/auth.service.ts
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcryptjs';
-import { CreateUserDto } from '../users/dto/create-user.dto';
+import { User } from '../entities/user.entity';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private usersRepository: Repository<User>,
     private jwtService: JwtService,
   ) {}
 
-  async register(createUserDto: CreateUserDto): Promise<{ userId: string; message: string }> {
-    const { email, password, firstName, lastName } = createUserDto;
+  async register(registerDto: RegisterDto): Promise<{ userId: string; message: string }> {
+    const { email, password, firstName, lastName } = registerDto;
 
     // Check if user already exists
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.usersRepository.findOne({
       where: { email },
     });
 
     if (existingUser) {
-      throw new UnauthorizedException('An account with this email already exists.');
+      throw new Error('An account with this email already exists.');
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const user = this.userRepository.create({
+    // Create new user
+    const newUser = this.usersRepository.create({
       email,
       password: hashedPassword,
       firstName,
       lastName,
     });
 
-    const savedUser = await this.userRepository.save(user);
-
-    return {
-      userId: savedUser.id,
-      message: 'User registered successfully.',
-    };
+    try {
+      const savedUser = await this.usersRepository.save(newUser);
+      
+      this.logger.log(`User registered successfully with ID: ${savedUser.id}`);
+      
+      return {
+        userId: savedUser.id.toString(),
+        message: 'User registered successfully.',
+      };
+    } catch (error) {
+      this.logger.error('Error registering user:', error);
+      throw new Error('Failed to register user.');
+    }
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({
+    const user = await this.usersRepository.findOne({
       where: { email },
     });
 
-    if (!user) {
-      return null;
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (isPasswordValid) {
-      // Remove password from returned user object
-      const { password: _, ...result } = user;
-      return result;
+    if (user && await bcrypt.compare(password, user.password)) {
+      return user;
     }
 
     return null;

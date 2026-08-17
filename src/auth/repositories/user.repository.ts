@@ -2,25 +2,26 @@ import { EntityRepository, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ConflictException, InternalServerErrorException } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { firstName, lastName, email, password } = createUserDto;
 
-    const user = new User();
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.email = email;
-    user.password = await bcrypt.hash(password, 10);
-
     try {
-      return await user.save();
+      const user = this.create({
+        firstName,
+        lastName,
+        email,
+        password,
+      });
+
+      await this.save(user);
+      return user;
     } catch (error) {
       if (error.code === '23505') {
-        // PostgreSQL unique violation error code
-        throw new ConflictException('Email already exists');
+        throw new ConflictException('An account with this email already exists.');
       } else {
         throw new InternalServerErrorException('Error creating user');
       }
@@ -28,10 +29,10 @@ export class UserRepository extends Repository<User> {
   }
 
   async findUserByEmail(email: string): Promise<User> {
-    return await this.findOne({ where: { email } });
+    return this.findOne({ where: { email } });
   }
 
-  async findUserById(id: number): Promise<User> {
-    return await this.findOne({ where: { id } });
+  async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(password, hashedPassword);
   }
 }

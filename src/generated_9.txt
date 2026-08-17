@@ -1,7 +1,2 @@
 
-2. Update environment variables in `.env` file with your configuration.
-
-### Database Setup
-
-1. Ensure PostgreSQL is running
-2. Create database:
+### 4. Database Setup

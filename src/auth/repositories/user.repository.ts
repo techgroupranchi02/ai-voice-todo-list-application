@@ -19,6 +19,7 @@ export class UserRepository extends Repository<User> {
       return await user.save();
     } catch (error) {
       if (error.code === '23505') {
+        // PostgreSQL unique violation error code
         throw new ConflictException('Email already exists');
       } else {
         throw new InternalServerErrorException('Error creating user');
@@ -32,22 +33,5 @@ export class UserRepository extends Repository<User> {
 
   async findUserById(id: number): Promise<User> {
     return await this.findOne({ where: { id } });
-  }
-
-  async updateUser(id: number, userData: Partial<User>): Promise<User> {
-    const user = await this.findUserById(id);
-    if (!user) {
-      throw new ConflictException('User not found');
-    }
-
-    Object.assign(user, userData);
-    return await user.save();
-  }
-
-  async deleteUser(id: number): Promise<void> {
-    const result = await this.delete({ id });
-    if (result.affected === 0) {
-      throw new ConflictException('User not found');
-    }
   }
 }

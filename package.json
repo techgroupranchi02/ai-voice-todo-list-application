@@ -1,8 +1,8 @@
 {
-  "name": "voice-task-manager",
+  "name": "voice-assistant-platform",
   "version": "1.0.0",
-  "description": "A voice-enabled task management application with AI-powered transcription and productivity features",
-  "author": "VoiceTaskManager Team",
+  "description": "A voice assistant platform with speech recognition, transcription, and task management capabilities",
+  "author": "Senior Software Engineer",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -33,55 +33,52 @@
     "@nestjs/serve-static": "^4.0.0",
     "@nestjs/swagger": "^7.0.0",
     "@nestjs/websockets": "^10.0.0",
-    "@types/express": "^4.17.17",
-    "@types/node": "^20.3.1",
-    "@types/passport-jwt": "^3.0.8",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "@types/passport-jwt": "^3.0.0",
     "@types/passport-local": "^1.0.35",
-    "axios": "^1.4.0",
+    "axios": "^1.0.0",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
+    "dotenv": "^16.0.0",
+    "express-rate-limit": "^6.0.0",
     "helmet": "^7.0.0",
-    "joi": "^17.9.2",
-    "jsonwebtoken": "^9.0.2",
+    "joi": "^17.0.0",
+    "jsonwebtoken": "^9.0.0",
     "nestjs-winston": "^1.9.4",
     "passport": "^0.6.0",
-    "passport-jwt": "^4.0.1",
+    "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
-    "pg": "^8.11.0",
-    "redis": "^4.6.12",
+    "pg": "^8.0.0",
     "reflect-metadata": "^0.1.13",
-    "rimraf": "^5.0.1",
-    "rxjs": "^7.8.1",
-    "typeorm": "^0.3.17",
-    "uuid": "^9.0.0",
-    "winston": "^3.10.0"
+    "rxjs": "^7.8.0",
+    "typeorm": "^0.3.0",
+    "winston": "^3.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
-    "@types/express": "^4.17.17",
-    "@types/jest": "^29.5.2",
-    "@types/node": "^20.3.1",
-    "@types/supertest": "^2.0.12",
-    "@typescript-eslint/eslint-plugin": "^5.59.11",
-    "@typescript-eslint/parser": "^5.59.11",
-    "eslint": "^8.42.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-import": "^2.27.5",
-    "husky": "^8.0.3",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@types/supertest": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.46.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.0",
     "jest": "^29.5.0",
-    "prettier": "^2.8.8",
+    "prettier": "^3.0.0",
     "source-map-support": "^0.5.21",
-    "supertest": "^6.3.3",
+    "supertest": "^6.0.0",
     "ts-jest": "^29.1.0",
-    "ts-loader": "^9.4.4",
+    "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.1.3"
+    "typescript": "^5.0.0"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -95,25 +92,12 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "app.controller.ts",
-      "app.service.ts",
-      "auth/**/*.(t|j)s",
-      "tasks/**/*.(t|j)s",
-      "voice/**/*.(t|j)s",
-      "users/**/*.(t|j)s"
+      "services/**/*.(t|j)s",
+      "controllers/**/*.(t|j)s",
+      "guards/**/*.(t|j)s",
+      "interceptors/**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.{ts,js}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
   }
 }

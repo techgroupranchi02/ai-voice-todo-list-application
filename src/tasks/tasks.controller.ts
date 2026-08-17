@@ -3,93 +3,57 @@ import {
   Get,
   Post,
   Body,
+  Patch,
   Param,
-  Put,
   Delete,
-  ParseIntPipe,
   UseGuards,
-  Request,
+  Logger,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
-@Controller('api/v1/tasks')
-@UseGuards(JwtAuthGuard)
+@Controller('tasks')
+@UseGuards(AuthGuard)
 export class TasksController {
+  private readonly logger = new Logger(TasksController.name);
+
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  async create(
-    @Body() createTaskDto: CreateTaskDto,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    const task = await this.tasksService.create(createTaskDto, userId);
-    
-    return {
-      success: true,
-      data: {
-        taskId: task.id,
-        message: 'Task created successfully.',
-      },
-    };
+  create(@Body() createTaskDto: CreateTaskDto) {
+    this.logger.log('Creating new task');
+    return this.tasksService.create(createTaskDto);
   }
 
   @Get()
-  async findAll(@Request() req) {
-    const userId = req.user.id;
-    const tasks = await this.tasksService.findAll(userId);
-    
-    return {
-      success: true,
-      data: tasks,
-    };
+  findAll() {
+    this.logger.log('Fetching all tasks');
+    return this.tasksService.findAll();
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    const task = await this.tasksService.findOne(id, userId);
-    
-    return {
-      success: true,
-      data: task,
-    };
+  findOne(@Param('id') id: number) {
+    this.logger.log(`Fetching task with ID: ${id}`);
+    return this.tasksService.findOne(id);
   }
 
-  @Put(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateTaskDto: UpdateTaskDto,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    const task = await this.tasksService.update(id, updateTaskDto, userId);
-    
-    return {
-      success: true,
-      data: task,
-    };
+  @Patch(':id')
+  update(@Param('id') id: number, @Body() updateTaskDto: UpdateTaskDto) {
+    this.logger.log(`Updating task with ID: ${id}`);
+    return this.tasksService.update(id, updateTaskDto);
+  }
+
+  @Patch(':id/toggle')
+  toggleCompletion(@Param('id') id: number) {
+    this.logger.log(`Toggling completion for task with ID: ${id}`);
+    return this.tasksService.toggleCompletion(id);
   }
 
   @Delete(':id')
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    await this.tasksService.remove(id, userId);
-    
-    return {
-      success: true,
-      data: {
-        message: 'Task deleted successfully.',
-      },
-    };
+  remove(@Param('id') id: number) {
+    this.logger.log(`Removing task with ID: ${id}`);
+    return this.tasksService.remove(id);
   }
 }

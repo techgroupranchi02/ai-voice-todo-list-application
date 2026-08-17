@@ -1,13 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../../auth/entities/user.entity';
 
 export enum TaskPriority {
   LOW = 3,
@@ -17,62 +9,34 @@ export enum TaskPriority {
 
 @Entity('tasks')
 export class Task {
-  @PrimaryGeneratedColumn('bigserial')
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ManyToOne(() => User, (user) => user.tasks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({
-    type: 'varchar',
-    length: 255,
-    nullable: false,
-  })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   title: string;
 
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({
-    type: 'timestamp',
-    nullable: true,
-  })
+  @Column({ type: 'timestamp', nullable: true })
   dueDate: Date;
 
-  @Column({
-    type: 'integer',
-    nullable: false,
-    default: TaskPriority.MEDIUM,
-  })
+  @Column({ type: 'int', default: TaskPriority.MEDIUM })
   priority: TaskPriority;
 
-  @Column({
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   category: string;
 
-  @Column({
-    type: 'boolean',
-    nullable: false,
-    default: false,
-  })
+  @Column({ type: 'boolean', default: false })
   completed: boolean;
 
-  @CreateDateColumn({
-    type: 'timestamp',
-    nullable: false,
-  })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    nullable: false,
-  })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 }

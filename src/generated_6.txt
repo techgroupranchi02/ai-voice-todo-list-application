@@ -1,4 +1,4 @@
 
 ## 🚀 Installation Steps
 
-### Cloning the Repository
+### 1. Clone the Repository

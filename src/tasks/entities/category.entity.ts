@@ -1,22 +1,19 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 @Entity('categories')
 export class Category {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('bigserial')
+  id: number;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  created_at: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
+  updated_at: Date;
 }

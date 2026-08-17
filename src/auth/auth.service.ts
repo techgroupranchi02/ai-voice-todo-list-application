@@ -1,68 +1,49 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UserRepository } from './repositories/user.repository';
+import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { User } from './entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userRepository: UserRepository,
-    private jwtService: JwtService,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ userId: string; message: string }> {
     const { email, password, firstName, lastName } = registerDto;
 
-    // Check if user already exists
-    const existingUser = await this.userRepository.findUserByEmail(email);
+    // Check if email already exists
+    const existingUser = await this.usersRepository.findOne({
+      where: { email },
+    });
+
     if (existingUser) {
       throw new ConflictException('An account with this email already exists.');
     }
 
-    // Create user
-    const newUser = await this.userRepository.createUser({
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create new user
+    const newUser = this.usersRepository.create({
       email,
-      password,
+      password: hashedPassword,
       firstName,
       lastName,
     });
 
-    return {
-      userId: newUser.id.toString(),
-      message: 'User registered successfully.',
-    };
-  }
-
-  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
-    const { email, password } = loginDto;
-    
-    // Find user by email
-    const user = await this.userRepository.findUserByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    try {
+      const savedUser = await this.usersRepository.save(newUser);
+      return {
+        userId: savedUser.id,
+        message: 'User registered successfully.',
+      };
+    } catch (error) {
+      throw new BadRequestException('Error registering user.');
     }
-
-    // Compare passwords
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Generate JWT token
-    const payload = { id: user.id, email: user.email };
-    const accessToken = this.jwtService.sign(payload);
-
-    return { accessToken };
-  }
-
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findUserByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      return user;
-    }
-    return null;
   }
 }

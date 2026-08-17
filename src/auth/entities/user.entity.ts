@@ -1,5 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { IsEmail, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 @Entity('users')
 export class User {
@@ -14,7 +20,7 @@ export class User {
   @IsOptional()
   lastName: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
   @IsEmail()
   @IsNotEmpty()
   email: string;

@@ -13,7 +13,7 @@ export class TaskRepository extends Repository<Task> {
     task.dueDate = createTaskDto.dueDate;
     task.priority = createTaskDto.priority;
     task.categoryId = createTaskDto.categoryId;
-    task.completed = createTaskDto.completed || false;
+    task.completed = false;
 
     return await this.save(task);
   }
@@ -36,18 +36,8 @@ export class TaskRepository extends Repository<Task> {
     });
   }
 
-  async findCompletedTasks(userId: number): Promise<Task[]> {
-    return await this.find({ 
-      where: { userId, completed: true },
-      order: { createdAt: 'DESC' }
-    });
-  }
-
-  async findPendingTasks(userId: number): Promise<Task[]> {
-    return await this.find({ 
-      where: { userId, completed: false },
-      order: { createdAt: 'DESC' }
-    });
+  async findTaskById(id: number): Promise<Task> {
+    return await this.findOne({ where: { id } });
   }
 
   async toggleTaskCompletion(id: number): Promise<Task> {
@@ -59,5 +49,9 @@ export class TaskRepository extends Repository<Task> {
 
     task.completed = !task.completed;
     return await this.save(task);
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await this.delete({ id });
   }
 }

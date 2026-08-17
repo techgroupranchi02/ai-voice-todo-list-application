@@ -1,30 +1,24 @@
-// src/tasks/dto/create-task.dto.ts
-import { IsDateString, IsNotEmpty, IsOptional, IsString, IsEnum } from 'class-validator';
-
-export enum TaskPriority {
-  LOW = 1,
-  MEDIUM = 2,
-  HIGH = 3,
-}
+import { IsNotEmpty, IsOptional, IsString, IsDate, IsNumber, IsEnum } from 'class-validator';
+import { Priority } from '../entities/task.entity';
 
 export class CreateTaskDto {
-  @IsNotEmpty({ message: 'Title cannot be empty.' })
-  @IsString({ message: 'Title must be a string.' })
+  @IsString()
+  @IsNotEmpty()
   title: string;
 
+  @IsString()
   @IsOptional()
-  @IsString({ message: 'Description must be a string.' })
   description?: string;
 
+  @IsDate()
   @IsOptional()
-  @IsDateString({}, { message: 'Due date must be a valid date.' })
   dueDate?: Date;
 
+  @IsEnum(Priority)
   @IsOptional()
-  @IsEnum(TaskPriority, { message: 'Priority must be one of: LOW, MEDIUM, HIGH.' })
-  priority?: TaskPriority;
+  priority?: Priority;
 
+  @IsString()
   @IsOptional()
-  @IsString({ message: 'Category must be a string.' })
   category?: string;
 }

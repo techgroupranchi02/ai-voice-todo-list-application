@@ -1,2 +1,2 @@
 
-3. **Generate new migration**
+3. **Create Seed Data** (optional):

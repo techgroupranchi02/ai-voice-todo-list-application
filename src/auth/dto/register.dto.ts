@@ -1,16 +1,15 @@
-// src/auth/dto/register.dto.ts
 import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 export class RegisterDto {
-  @IsEmail({}, { message: 'The provided email address is invalid.' })
-  @IsNotEmpty({ message: 'Email is required.' })
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
 
-  @IsNotEmpty({ message: 'Password is required.' })
-  @MinLength(8, { message: 'Password must be at least 8 characters long.' })
+  @IsNotEmpty()
+  @MinLength(6)
   password: string;
 
-  @IsNotEmpty({ message: 'First name is required.' })
+  @IsNotEmpty()
   firstName: string;
 
   @IsOptional()

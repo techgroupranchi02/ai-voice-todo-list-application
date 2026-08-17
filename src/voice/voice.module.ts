@@ -1,9 +1,8 @@
-// src/voice/voice.module.ts
 import { Module } from '@nestjs/common';
-import { VoiceService } from './voice.service';
-import { VoiceController } from './voice.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from '../tasks/entities/task.entity';
+import { VoiceService } from './voice.service';
+import { VoiceController } from './voice.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Task])],

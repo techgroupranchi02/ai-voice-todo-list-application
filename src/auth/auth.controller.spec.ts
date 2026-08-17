@@ -10,7 +10,6 @@ describe('AuthController', () => {
 
   const mockAuthService = {
     register: jest.fn(),
-    validateUser: jest.fn(),
     login: jest.fn(),
   };
 
@@ -41,7 +40,7 @@ describe('AuthController', () => {
       lastName: 'Doe',
     };
 
-    it('should register a new user successfully', async () => {
+    it('should register a user successfully', async () => {
       const mockResult = {
         userId: '1',
         message: 'User registered successfully.',
@@ -55,12 +54,15 @@ describe('AuthController', () => {
         success: true,
         data: mockResult,
       });
+      expect(authService.register).toHaveBeenCalledWith(registerDto);
     });
 
-    it('should throw an error if registration fails', async () => {
-      mockAuthService.register.mockRejectedValue(new Error('Registration failed'));
+    it('should handle conflict error during registration', async () => {
+      mockAuthService.register.mockRejectedValue(
+        new Error('An account with this email already exists.'),
+      );
 
-      await expect(controller.register(registerDto)).rejects.toThrow('Registration failed');
+      await expect(controller.register(registerDto)).rejects.toThrow(Error);
     });
   });
 
@@ -70,34 +72,26 @@ describe('AuthController', () => {
       password: 'password123',
     };
 
-    it('should login user successfully', async () => {
-      const mockUser = {
-        id: 1,
-        email: 'test@example.com',
+    it('should login a user successfully', async () => {
+      const mockResult = {
+        accessToken: 'mock-jwt-token',
       };
 
-      const mockToken = {
-        access_token: 'mock-jwt-token',
-      };
-
-      mockAuthService.validateUser.mockResolvedValue(mockUser);
-      mockAuthService.login.mockResolvedValue(mockToken);
+      mockAuthService.login.mockResolvedValue(mockResult);
 
       const result = await controller.login(loginDto);
 
       expect(result).toEqual({
         success: true,
-        data: {
-          ...mockToken,
-          userId: '1',
-        },
+        data: mockResult,
       });
+      expect(authService.login).toHaveBeenCalledWith(loginDto);
     });
 
-    it('should throw an error for invalid credentials', async () => {
-      mockAuthService.validateUser.mockResolvedValue(null);
+    it('should handle invalid credentials during login', async () => {
+      mockAuthService.login.mockRejectedValue(new Error('Invalid credentials'));
 
-      await expect(controller.login(loginDto)).rejects.toThrow('Invalid credentials');
+      await expect(controller.login(loginDto)).rejects.toThrow(Error);
     });
   });
 });

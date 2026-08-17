@@ -7,10 +7,10 @@ export class Task {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'user_id', type: 'bigint' })
+  @Column({ name: 'user_id' })
   userId: number;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ length: 255 })
   title: string;
 
   @Column({ type: 'text', nullable: true })
@@ -22,10 +22,10 @@ export class Task {
   @Column({ type: 'int' })
   priority: number;
 
-  @Column({ name: 'category_id', type: 'bigint', nullable: true })
+  @Column({ name: 'category_id', nullable: true })
   categoryId: number;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ default: false })
   completed: boolean;
 
   @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

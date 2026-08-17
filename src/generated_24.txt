@@ -1,2 +1,4 @@
 
-### E2E Tests
+## 🧪 Testing & Build Commands
+
+### Test Commands

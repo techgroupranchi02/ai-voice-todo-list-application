@@ -1,2 +1,2 @@
 
-### Nginx Configuration (Example)
+### Application Monitoring

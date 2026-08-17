@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsDateString, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsDateString, IsIn } from 'class-validator';
 
 export class CreateTaskDto {
   @IsNotEmpty()
@@ -12,8 +12,8 @@ export class CreateTaskDto {
   dueDate?: Date;
 
   @IsOptional()
-  @IsEnum(['High', 'Medium', 'Low'])
-  priority?: string;
+  @IsIn([0, 1, 2]) // 0 = High, 1 = Medium, 2 = Low
+  priority?: number;
 
   @IsOptional()
   category?: string;

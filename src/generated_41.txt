@@ -1,0 +1,47 @@
+
+## 🔒 Security Guidelines
+1. **Environment Variables**
+   - Never commit `.env` files to version control
+   - Use `.env.example` as a template for developers
+   - Rotate secrets regularly
+
+2. **Authentication**
+   - Implement rate limiting on auth endpoints
+   - Use HTTPS in production
+   - Store passwords with bcrypt (cost factor ≥ 10)
+   - Implement refresh token rotation
+
+3. **Input Validation**
+   - Validate all user inputs using class-validator
+   - Sanitize data before processing
+   - Use parameterized queries to prevent SQL injection
+
+4. **API Security**
+   - Implement CORS properly
+   - Use helmet.js for security headers
+   - Implement proper error handling without exposing sensitive information
+
+5. **File Uploads**
+   - Validate file types and sizes
+   - Store uploads in secure directories
+   - Scan uploaded files for malware
+
+## 🤝 Contributing
+We welcome contributions to the Voice Task Manager project! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Maintainer Info
+**Voice Task Manager Team**
+- Email: team@voicetaskmanager.com
+- GitHub: https://github.com/voice-task-manager
+
+## ⭐ Support
+If you find this project helpful, please consider giving it a star on GitHub! Your support helps us continue to improve and maintain the project.

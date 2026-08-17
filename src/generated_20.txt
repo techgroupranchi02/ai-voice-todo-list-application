@@ -1,2 +1,23 @@
 
+### Sample Endpoints
+
+#### Authentication
+- `POST /auth/register` - Register a new user
+- `POST /auth/login` - Login and get tokens
+- `POST /auth/refresh` - Refresh access token
+
+#### Tasks
+- `GET /tasks` - Get all tasks
+- `POST /tasks` - Create a new task
+- `GET /tasks/:id` - Get a specific task
+- `PUT /tasks/:id` - Update a task
+- `PATCH /tasks/:id/toggle` - Toggle task completion status
+- `DELETE /tasks/:id` - Delete a task
+
 #### Voice Input
+- `POST /voice/transcribe` - Transcribe voice input to text
+- `POST /voice/record` - Record and process voice input
+
+## 🗄️ Database Setup & Migration Commands
+
+### Create Database

@@ -18,14 +18,14 @@ export class ValidationPipe implements PipeTransform<any> {
     const errors = await validate(object);
 
     if (errors.length > 0) {
-      const messages = errors.map((error) => 
+      const messages = errors.map(error => 
         Object.values(error.constraints).join(', ')
       );
       
       throw new BadRequestException({
         success: false,
         error: {
-          status: 400,
+          statusCode: 400,
           message: messages.join('. '),
           timestamp: new Date().toISOString(),
         },
@@ -35,8 +35,8 @@ export class ValidationPipe implements PipeTransform<any> {
     return value;
   }
 
-  private toValidate(metatype: any): boolean {
-    const types = [String, Boolean, Number, Array, Object];
-    return !types.find((type) => metatype === type);
+  private toValidate(metatype: Function): boolean {
+    const types: Function[] = [String, Boolean, Number, Array, Object];
+    return !types.includes(metatype);
   }
 }

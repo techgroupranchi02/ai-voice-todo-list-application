@@ -1,2 +1,4 @@
 
-2. **Check running containers**
+## 🐳 Running with Docker
+
+### Build and Start Services

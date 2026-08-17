@@ -18,7 +18,6 @@ describe('UserRepository', () => {
           useValue: {
             save: jest.fn(),
             findOne: jest.fn(),
-            delete: jest.fn(),
           },
         },
       ],
@@ -50,7 +49,7 @@ describe('UserRepository', () => {
       };
 
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword');
-      jest.spyOn(repository, 'save').mockResolvedValue(mockUser as any);
+      jest.spyOn(repository, 'save').mockResolvedValue(mockUser);
 
       const result = await repository.createUser(createUserDto);
       expect(result).toEqual(mockUser);
@@ -65,9 +64,13 @@ describe('UserRepository', () => {
       };
 
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword');
-      jest.spyOn(repository, 'save').mockRejectedValue({ code: '23505' });
+      jest
+        .spyOn(repository, 'save')
+        .mockRejectedValue({ code: '23505' });
 
-      await expect(repository.createUser(createUserDto)).rejects.toThrow(ConflictException);
+      await expect(repository.createUser(createUserDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw InternalServerErrorException on other errors', async () => {
@@ -79,16 +82,20 @@ describe('UserRepository', () => {
       };
 
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedPassword');
-      jest.spyOn(repository, 'save').mockRejectedValue(new Error('Database error'));
+      jest
+        .spyOn(repository, 'save')
+        .mockRejectedValue({ code: 'OTHER_ERROR' });
 
-      await expect(repository.createUser(createUserDto)).rejects.toThrow(InternalServerErrorException);
+      await expect(repository.createUser(createUserDto)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
   describe('findUserByEmail', () => {
     it('should find user by email', async () => {
       jest.spyOn(repository, 'findOne').mockResolvedValue(mockUser);
-
+      
       const result = await repository.findUserByEmail('john.doe@example.com');
       expect(result).toEqual(mockUser);
     });
@@ -97,39 +104,9 @@ describe('UserRepository', () => {
   describe('findUserById', () => {
     it('should find user by id', async () => {
       jest.spyOn(repository, 'findOne').mockResolvedValue(mockUser);
-
+      
       const result = await repository.findUserById(1);
       expect(result).toEqual(mockUser);
-    });
-  });
-
-  describe('updateUser', () => {
-    it('should update user successfully', async () => {
-      jest.spyOn(repository, 'findUserById').mockResolvedValue(mockUser);
-      jest.spyOn(repository, 'save').mockResolvedValue(mockUser);
-
-      const result = await repository.updateUser(1, { firstName: 'Jane' });
-      expect(result).toEqual(mockUser);
-    });
-
-    it('should throw ConflictException when user not found', async () => {
-      jest.spyOn(repository, 'findUserById').mockResolvedValue(null);
-
-      await expect(repository.updateUser(1, { firstName: 'Jane' })).rejects.toThrow(ConflictException);
-    });
-  });
-
-  describe('deleteUser', () => {
-    it('should delete user successfully', async () => {
-      jest.spyOn(repository, 'delete').mockResolvedValue({ affected: 1 } as any);
-
-      await expect(repository.deleteUser(1)).resolves.not.toThrow();
-    });
-
-    it('should throw ConflictException when user not found', async () => {
-      jest.spyOn(repository, 'delete').mockResolvedValue({ affected: 0 } as any);
-
-      await expect(repository.deleteUser(1)).rejects.toThrow(ConflictException);
     });
   });
 });

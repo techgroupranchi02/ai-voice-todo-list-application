@@ -1,6 +1,6 @@
-# Voice Assistant App
+# Task Management App
 
-> A smart voice assistant application with speech recognition, task management, and real-time communication capabilities.
+> A comprehensive task management application with voice input capabilities and real-time collaboration features.
 
 ## 📌 Table of Contents
 
@@ -11,7 +11,7 @@
 - [📋 Prerequisites & Version Check](#-prerequisites--version-check)
 - [🚀 Installation Steps](#-installation-steps)
 - [🔐 Environment Variables](#-environment-variables)
-- [▶️ Running the Project](#️-running-the-project)
+- [▶️ Running the Project](#-running-the-project)
 - [🐳 Running with Docker](#-running-with-docker)
 - [🔌 API Documentation](#-api-documentation)
 - [🗄️ Database Setup & Migration](#-database-setup--migration)
@@ -28,26 +28,21 @@
 ## 📖 About the Project
 
 ### Problem Statement
-Modern productivity tools often lack seamless voice interaction capabilities, making it difficult for users to efficiently manage tasks and communicate in real-time while maintaining focus on their work.
+Modern productivity tools often lack seamless integration between task management, voice input capabilities, and real-time collaboration features. Users struggle with fragmented workflows when managing tasks across multiple platforms.
 
 ### Solution
-This Voice Assistant App provides a comprehensive solution that combines:
-- Real-time speech recognition and transcription
-- Task management with interactive status controls
-- WebSocket-based real-time communication
-- Secure authentication and authorization
-- Scalable backend architecture with NestJS
+This Task Management App provides a unified platform that combines traditional task management with advanced voice recognition, real-time updates, and collaborative features - all within a single, cohesive application.
 
 ## ✨ Features
 
-- 🎤 **Voice Recognition & Transcription**: Real-time speech-to-text conversion using Web Speech API
-- 📋 **Task Management**: Create, update, complete tasks with interactive UI controls
-- 🔗 **Real-Time Communication**: WebSocket integration for live updates and notifications
-- 🔐 **Secure Authentication**: JWT-based authentication with refresh token rotation
-- 📊 **Task Status Tracking**: Visual indicators for task completion status with filtering
-- 🌐 **Responsive UI**: Mobile-first design compatible with all device sizes
-- 🛡️ **Security**: Helmet.js protection, rate limiting, input validation
-- 📈 **Monitoring**: Winston logging and performance monitoring
+- 📋 **Task Management**: Create, update, delete, and organize tasks with status tracking
+- 🎤 **Voice Input**: Record and transcribe audio directly into tasks using Web Speech API
+- 🔗 **Real-time Collaboration**: Live task updates through WebSocket connections
+- 👥 **User Authentication**: Secure login with JWT and refresh token rotation
+- 📊 **Task Analytics**: Performance metrics and productivity insights
+- 🌐 **Responsive UI**: Mobile-first design for all device sizes
+- 🛡️ **Security**: Role-based access control and secure authentication
+- 🔄 **Automated Workflows**: Scheduled task reminders and notifications
 
 ## 🛠️ Tech Stack
 
@@ -58,13 +53,13 @@ This Voice Assistant App provides a comprehensive solution that combines:
 - **Cache**: Redis
 - **Authentication**: JWT, Passport.js
 - **Real-time**: WebSocket, Socket.IO
-- **API Documentation**: Swagger/OpenAPI
+- **Logging**: Winston
 
 ### Frontend
 - **Framework**: React Native (TypeScript)
 - **UI Library**: React Native components
-- **State Management**: React hooks and context API
-- **Networking**: Axios for HTTP requests
+- **State Management**: Redux Toolkit
+- **Navigation**: React Navigation
 
 ### Database
 - **Primary**: PostgreSQL
@@ -72,11 +67,12 @@ This Voice Assistant App provides a comprehensive solution that combines:
 
 ### AI/Automation
 - **Speech Recognition**: Web Speech API
-- **Natural Language Processing**: Ollama integration (planned)
+- **Voice Processing**: Base64 audio encoding/decoding
 
 ### DevOps
 - **Containerization**: Docker
+- **Orchestration**: Docker Compose
 - **CI/CD**: GitHub Actions (planned)
-- **Monitoring**: Winston logging, PM2 process manager
+- **Monitoring**: Winston logging
 
 ## 📂 Project Structure

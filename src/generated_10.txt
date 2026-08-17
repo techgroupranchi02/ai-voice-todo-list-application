@@ -1,2 +1,2 @@
 
-5. **Run database migrations (if applicable)**
+4. **Build the project**

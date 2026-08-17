@@ -2,18 +2,20 @@ import { EntityRepository, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ConflictException, InternalServerErrorException } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { firstName, lastName, email, password } = createUserDto;
 
+    const saltRounds = process.env.BCRYPT_ROUNDS ? parseInt(process.env.BCRYPT_ROUNDS) : 12;
+    
     const user = new User();
     user.firstName = firstName;
     user.lastName = lastName;
     user.email = email;
-    user.password = await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(password, saltRounds);
 
     try {
       return await user.save();

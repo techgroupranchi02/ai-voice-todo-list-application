@@ -1,2 +1,3 @@
 
-2. Run the application:
+## 📋 Prerequisites & Version Check
+Before installing the project, ensure you have the following installed:

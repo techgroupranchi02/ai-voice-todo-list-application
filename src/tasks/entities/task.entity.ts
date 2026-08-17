@@ -1,49 +1,52 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { IsNotEmpty, IsOptional, IsDate, IsNumber, IsBoolean, IsString } from 'class-validator';
-import { User } from '../../auth/entities/user.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { Category } from '../../categories/entities/category.entity';
 
 @Entity('tasks')
 export class Task {
-  @PrimaryGeneratedColumn('bigserial')
+  @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @ManyToOne(() => User, user => user.id)
+  @ManyToOne(() => User, (user) => user.tasks)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  @IsNotEmpty()
-  @IsString()
+  @Column({ type: 'bigint', name: 'user_id' })
+  userId: number;
+
+  @Column({ type: 'varchar', length: 255 })
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  @IsOptional()
-  @IsString()
   description: string;
 
   @Column({ type: 'timestamp', nullable: true })
-  @IsOptional()
-  @IsDate()
   dueDate: Date;
 
   @Column({ type: 'int', default: 0 })
-  @IsNotEmpty()
-  @IsNumber()
   priority: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  @IsOptional()
-  @IsString()
-  category: string;
+  @ManyToOne(() => Category, (category) => category.tasks)
+  @JoinColumn({ name: 'category_id' })
+  category: Category;
+
+  @Column({ type: 'bigint', name: 'category_id', nullable: true })
+  categoryId: number;
 
   @Column({ type: 'boolean', default: false })
-  @IsNotEmpty()
-  @IsBoolean()
   completed: boolean;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
 }

@@ -1,19 +1,20 @@
 import { EntityRepository, Repository } from 'typeorm';
 import { Task } from '../entities/task.entity';
-import { CreateTaskDto } from '../../tasks/dto/create-task.dto';
-import { UpdateTaskDto } from '../../tasks/dto/update-task.dto';
+import { CreateTaskDto } from '../dto/create-task.dto';
+import { UpdateTaskDto } from '../dto/update-task.dto';
 
 @EntityRepository(Task)
 export class TaskRepository extends Repository<Task> {
   async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
     const task = new Task();
+    task.userId = createTaskDto.userId;
     task.title = createTaskDto.title;
     task.description = createTaskDto.description;
     task.dueDate = createTaskDto.dueDate;
     task.priority = createTaskDto.priority;
     task.categoryId = createTaskDto.categoryId;
-    task.completed = false;
-    
+    task.completed = createTaskDto.completed || false;
+
     return await this.save(task);
   }
 
@@ -21,30 +22,29 @@ export class TaskRepository extends Repository<Task> {
     const task = await this.findOne({ where: { id } });
     
     if (!task) {
-      throw new Error('Task not found');
+      throw new Error(`Task with ID ${id} not found`);
     }
-    
+
     Object.assign(task, updateTaskDto);
-    
     return await this.save(task);
   }
 
   async findUserTasks(userId: number): Promise<Task[]> {
-    return await this.find({
+    return await this.find({ 
       where: { userId },
       order: { createdAt: 'DESC' }
     });
   }
 
   async findCompletedTasks(userId: number): Promise<Task[]> {
-    return await this.find({
+    return await this.find({ 
       where: { userId, completed: true },
       order: { createdAt: 'DESC' }
     });
   }
 
   async findPendingTasks(userId: number): Promise<Task[]> {
-    return await this.find({
+    return await this.find({ 
       where: { userId, completed: false },
       order: { createdAt: 'DESC' }
     });
@@ -54,15 +54,10 @@ export class TaskRepository extends Repository<Task> {
     const task = await this.findOne({ where: { id } });
     
     if (!task) {
-      throw new Error('Task not found');
+      throw new Error(`Task with ID ${id} not found`);
     }
-    
-    task.completed = !task.completed;
-    
-    return await this.save(task);
-  }
 
-  async deleteTask(id: number): Promise<void> {
-    await this.delete({ id });
+    task.completed = !task.completed;
+    return await this.save(task);
   }
 }

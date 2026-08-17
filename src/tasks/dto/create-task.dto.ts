@@ -1,30 +1,20 @@
-import { IsNotEmpty, IsOptional, IsDate, IsNumber, IsBoolean, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsDateString, IsEnum } from 'class-validator';
 
 export class CreateTaskDto {
   @IsNotEmpty()
-  @IsString()
   title: string;
 
   @IsOptional()
-  @IsString()
   description?: string;
 
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   dueDate?: Date;
 
-  @IsNotEmpty()
-  @IsNumber()
-  priority: number;
+  @IsOptional()
+  @IsEnum(['High', 'Medium', 'Low'])
+  priority?: string;
 
   @IsOptional()
-  @IsString()
   category?: string;
-
-  @IsNotEmpty()
-  @IsBoolean()
-  completed: boolean;
-
-  @IsNotEmpty()
-  user: any; // This will be the user object from JWT
 }

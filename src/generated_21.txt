@@ -1,10 +1,2 @@
 
-## 🗄️ Database Setup & Migration
-
-### Prerequisites
-- PostgreSQL server running
-- Database user with appropriate permissions
-
-### Setup Steps
-
-1. **Create Database**:
+### Run Migrations

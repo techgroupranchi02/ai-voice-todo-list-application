@@ -1,18 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-import { User } from '../entities/user.entity';
+import { UserRepository } from './repositories/user.repository';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { User } from './entities/user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
+    private userRepository: UserRepository,
     private jwtService: JwtService,
   ) {}
 
@@ -20,56 +17,52 @@ export class AuthService {
     const { email, password, firstName, lastName } = registerDto;
 
     // Check if user already exists
-    const existingUser = await this.usersRepository.findOne({
-      where: { email },
-    });
-
+    const existingUser = await this.userRepository.findUserByEmail(email);
     if (existingUser) {
-      throw new Error('An account with this email already exists.');
+      throw new ConflictException('An account with this email already exists.');
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const newUser = this.usersRepository.create({
+    // Create user
+    const newUser = await this.userRepository.createUser({
       email,
-      password: hashedPassword,
+      password,
       firstName,
       lastName,
     });
 
-    try {
-      const savedUser = await this.usersRepository.save(newUser);
-      
-      this.logger.log(`User registered successfully with ID: ${savedUser.id}`);
-      
-      return {
-        userId: savedUser.id.toString(),
-        message: 'User registered successfully.',
-      };
-    } catch (error) {
-      this.logger.error('Error registering user:', error);
-      throw new Error('Failed to register user.');
+    return {
+      userId: newUser.id.toString(),
+      message: 'User registered successfully.',
+    };
+  }
+
+  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
+    const { email, password } = loginDto;
+    
+    // Find user by email
+    const user = await this.userRepository.findUserByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    // Compare passwords
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Generate JWT token
+    const payload = { id: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.usersRepository.findOne({
-      where: { email },
-    });
-
+    const user = await this.userRepository.findUserByEmail(email);
     if (user && await bcrypt.compare(password, user.password)) {
       return user;
     }
-
     return null;
-  }
-
-  async login(user: User) {
-    const payload = { email: user.email, sub: user.id };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
   }
 }

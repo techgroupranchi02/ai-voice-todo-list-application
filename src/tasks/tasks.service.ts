@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task } from './entities/task.entity';
@@ -7,51 +7,100 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     @InjectRepository(Task)
     private tasksRepository: Repository<Task>,
   ) {}
 
-  async create(createTaskDto: CreateTaskDto, userId: number): Promise<Task> {
-    const task = this.tasksRepository.create({
-      ...createTaskDto,
-      user: { id: userId },
-    });
-    return await this.tasksRepository.save(task);
-  }
-
-  async findAll(userId: number): Promise<Task[]> {
-    return await this.tasksRepository.find({
-      where: { user: { id: userId } },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findOne(id: number, userId: number): Promise<Task> {
-    const task = await this.tasksRepository.findOne({
-      where: { id, user: { id: userId } },
-    });
-    
-    if (!task) {
-      throw new NotFoundException('Task not found');
+  async create(createTaskDto: CreateTaskDto): Promise<Task> {
+    try {
+      const task = this.tasksRepository.create(createTaskDto);
+      const savedTask = await this.tasksRepository.save(task);
+      
+      this.logger.log(`Task created successfully with ID: ${savedTask.id}`);
+      return savedTask;
+    } catch (error) {
+      this.logger.error('Error creating task:', error);
+      throw error;
     }
-    
-    return task;
   }
 
-  async update(id: number, updateTaskDto: UpdateTaskDto, userId: number): Promise<Task> {
-    const task = await this.findOne(id, userId);
-    
-    Object.assign(task, updateTaskDto);
-    
-    return await this.tasksRepository.save(task);
+  async update(id: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
+    try {
+      const task = await this.tasksRepository.findOne({ where: { id } });
+      
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      Object.assign(task, updateTaskDto);
+      const updatedTask = await this.tasksRepository.save(task);
+      
+      this.logger.log(`Task updated successfully with ID: ${updatedTask.id}`);
+      return updatedTask;
+    } catch (error) {
+      this.logger.error('Error updating task:', error);
+      throw error;
+    }
   }
 
-  async remove(id: number, userId: number): Promise<void> {
-    const result = await this.tasksRepository.delete({ id, user: { id: userId } });
-    
-    if (result.affected === 0) {
-      throw new NotFoundException('Task not found');
+  async findOne(id: number): Promise<Task> {
+    try {
+      const task = await this.tasksRepository.findOne({ where: { id } });
+      
+      if (!task) {
+        throw new Error('Task not found');
+      }
+      
+      return task;
+    } catch (error) {
+      this.logger.error('Error finding task:', error);
+      throw error;
+    }
+  }
+
+  async findAll(): Promise<Task[]> {
+    try {
+      return await this.tasksRepository.find();
+    } catch (error) {
+      this.logger.error('Error fetching tasks:', error);
+      throw error;
+    }
+  }
+
+  async toggleCompletion(id: number): Promise<Task> {
+    try {
+      const task = await this.tasksRepository.findOne({ where: { id } });
+      
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      task.completed = !task.completed;
+      const updatedTask = await this.tasksRepository.save(task);
+      
+      this.logger.log(`Task completion toggled successfully with ID: ${updatedTask.id}`);
+      return updatedTask;
+    } catch (error) {
+      this.logger.error('Error toggling task completion:', error);
+      throw error;
+    }
+  }
+
+  async remove(id: number): Promise<void> {
+    try {
+      const result = await this.tasksRepository.delete(id);
+      
+      if (result.affected === 0) {
+        throw new Error('Task not found');
+      }
+      
+      this.logger.log(`Task removed successfully with ID: ${id}`);
+    } catch (error) {
+      this.logger.error('Error removing task:', error);
+      throw error;
     }
   }
 }

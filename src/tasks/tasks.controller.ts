@@ -1,59 +1,104 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
+  Get,
   Param,
+  Patch,
   Delete,
   UseGuards,
-  Logger,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { AuthGuard } from '../auth/guards/auth.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { Task } from './entities/task.entity';
 
 @Controller('tasks')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard('jwt'))
 export class TasksController {
-  private readonly logger = new Logger(TasksController.name);
-
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  create(@Body() createTaskDto: CreateTaskDto) {
-    this.logger.log('Creating new task');
-    return this.tasksService.create(createTaskDto);
+  async create(@Body() createTaskDto: CreateTaskDto): Promise<{ success: boolean; data: Task }> {
+    try {
+      const task = await this.tasksService.create(createTaskDto);
+      return {
+        success: true,
+        data: task,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Get()
-  findAll() {
-    this.logger.log('Fetching all tasks');
-    return this.tasksService.findAll();
+  async findAll(): Promise<{ success: boolean; data: Task[] }> {
+    try {
+      const tasks = await this.tasksService.findAll();
+      return {
+        success: true,
+        data: tasks,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    this.logger.log(`Fetching task with ID: ${id}`);
-    return this.tasksService.findOne(id);
+  async findOne(@Param('id') id: number): Promise<{ success: boolean; data: Task }> {
+    try {
+      const task = await this.tasksService.findOne(id);
+      return {
+        success: true,
+        data: task,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateTaskDto: UpdateTaskDto) {
-    this.logger.log(`Updating task with ID: ${id}`);
-    return this.tasksService.update(id, updateTaskDto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ): Promise<{ success: boolean; data: Task }> {
+    try {
+      const task = await this.tasksService.update(id, updateTaskDto);
+      return {
+        success: true,
+        data: task,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Patch(':id/toggle')
-  toggleCompletion(@Param('id') id: number) {
-    this.logger.log(`Toggling completion for task with ID: ${id}`);
-    return this.tasksService.toggleCompletion(id);
+  async toggleCompletion(
+    @Param('id') id: number,
+  ): Promise<{ success: boolean; data: Task }> {
+    try {
+      const task = await this.tasksService.toggleCompletion(id);
+      return {
+        success: true,
+        data: task,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
-    this.logger.log(`Removing task with ID: ${id}`);
-    return this.tasksService.remove(id);
+  async remove(@Param('id') id: number): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.tasksService.remove(id);
+      return {
+        success: true,
+        message: 'Task deleted successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }

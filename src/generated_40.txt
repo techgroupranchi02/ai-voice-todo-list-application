@@ -1,0 +1,2 @@
+
+5. **TypeScript compilation errors**

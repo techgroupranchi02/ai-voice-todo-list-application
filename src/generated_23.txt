@@ -1,2 +1,2 @@
 
-### Migrations
+3. **Generate new migration**

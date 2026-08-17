@@ -1,33 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
-import { Repository } from 'typeorm';
-import { Task } from './entities/task.entity';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { TaskRepository } from './repositories/task.repository';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { Task } from './entities/task.entity';
+import { NotFoundException } from '@nestjs/common';
 
 describe('TasksService', () => {
   let service: TasksService;
-  let repository: Repository<Task>;
+  let repository: TaskRepository;
 
-  const mockTask = {
-    id: 1,
-    title: 'Test Task',
-    description: 'Test Description',
-    dueDate: new Date(),
-    priority: 2,
-    category: 'Personal',
-    completed: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const mockRepository = {
-    create: jest.fn().mockReturnValue(mockTask),
-    save: jest.fn().mockResolvedValue(mockTask),
-    findOne: jest.fn().mockResolvedValue(mockTask),
-    find: jest.fn().mockResolvedValue([mockTask]),
-    delete: jest.fn().mockResolvedValue({ affected: 1 }),
+  const mockTaskRepository = {
+    createTask: jest.fn(),
+    findAllTasks: jest.fn(),
+    findTaskById: jest.fn(),
+    updateTask: jest.fn(),
+    deleteTask: jest.fn(),
+    toggleTaskCompletion: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -35,14 +24,14 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         {
-          provide: getRepositoryToken(Task),
-          useValue: mockRepository,
+          provide: TaskRepository,
+          useValue: mockTaskRepository,
         },
       ],
     }).compile();
 
     service = module.get<TasksService>(TasksService);
-    repository = module.get<Repository<Task>>(getRepositoryToken(Task));
+    repository = module.get<TaskRepository>(TaskRepository);
   });
 
   it('should be defined', () => {
@@ -55,14 +44,106 @@ describe('TasksService', () => {
         title: 'Test Task',
         description: 'Test Description',
         dueDate: new Date(),
-        priority: 2,
+        priority: 1,
         category: 'Personal',
         completed: false,
+        user: { id: 1 },
       };
 
-      expect(await service.create(createTaskDto)).toEqual(mockTask);
-      expect(repository.create).toHaveBeenCalledWith(createTaskDto);
-      expect(repository.save).toHaveBeenCalled();
+      const mockTask: Task = {
+        id: 1,
+        ...createTaskDto,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTaskRepository.createTask.mockResolvedValue(mockTask);
+
+      const result = await service.create(createTaskDto);
+      expect(result).toEqual(mockTask);
+      expect(repository.createTask).toHaveBeenCalledWith(createTaskDto);
+    });
+
+    it('should throw an error when task creation fails', async () => {
+      const createTaskDto: CreateTaskDto = {
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: false,
+        user: { id: 1 },
+      };
+
+      mockTaskRepository.createTask.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.create(createTaskDto)).rejects.toThrow(Error);
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return all tasks', async () => {
+      const mockTasks: Task[] = [
+        {
+          id: 1,
+          title: 'Test Task 1',
+          description: 'Test Description 1',
+          dueDate: new Date(),
+          priority: 1,
+          category: 'Personal',
+          completed: false,
+          user: { id: 1 },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 2,
+          title: 'Test Task 2',
+          description: 'Test Description 2',
+          dueDate: new Date(),
+          priority: 2,
+          category: 'Work',
+          completed: true,
+          user: { id: 1 },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockTaskRepository.findAllTasks.mockResolvedValue(mockTasks);
+
+      const result = await service.findAll();
+      expect(result).toEqual(mockTasks);
+      expect(repository.findAllTasks).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a task by id', async () => {
+      const mockTask: Task = {
+        id: 1,
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: false,
+        user: { id: 1 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTaskRepository.findTaskById.mockResolvedValue(mockTask);
+
+      const result = await service.findOne(1);
+      expect(result).toEqual(mockTask);
+      expect(repository.findTaskById).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException when task is not found', async () => {
+      mockTaskRepository.findTaskById.mockResolvedValue(null);
+
+      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -70,44 +151,81 @@ describe('TasksService', () => {
     it('should update a task successfully', async () => {
       const updateTaskDto: UpdateTaskDto = {
         title: 'Updated Task',
+        description: 'Updated Description',
       };
 
-      expect(await service.update(1, updateTaskDto)).toEqual(mockTask);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(repository.save).toHaveBeenCalled();
+      const mockTask: Task = {
+        id: 1,
+        title: 'Updated Task',
+        description: 'Updated Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: false,
+        user: { id: 1 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockTaskRepository.updateTask.mockResolvedValue(mockTask);
+
+      const result = await service.update(1, updateTaskDto);
+      expect(result).toEqual(mockTask);
+      expect(repository.updateTask).toHaveBeenCalledWith(1, updateTaskDto);
+    });
+
+    it('should throw an error when task update fails', async () => {
+      const updateTaskDto: UpdateTaskDto = {
+        title: 'Updated Task',
+      };
+
+      mockTaskRepository.updateTask.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.update(1, updateTaskDto)).rejects.toThrow(Error);
     });
   });
 
-  describe('findOne', () => {
-    it('should find a task by ID successfully', async () => {
-      expect(await service.findOne(1)).toEqual(mockTask);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-    });
-  });
+  describe('remove', () => {
+    it('should delete a task successfully', async () => {
+      mockTaskRepository.deleteTask.mockResolvedValue(undefined);
 
-  describe('findAll', () => {
-    it('should return all tasks', async () => {
-      expect(await service.findAll()).toEqual([mockTask]);
-      expect(repository.find).toHaveBeenCalled();
+      await expect(service.remove(1)).resolves.toBeUndefined();
+      expect(repository.deleteTask).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw an error when task deletion fails', async () => {
+      mockTaskRepository.deleteTask.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.remove(1)).rejects.toThrow(Error);
     });
   });
 
   describe('toggleCompletion', () => {
     it('should toggle task completion successfully', async () => {
-      const updatedTask = { ...mockTask, completed: true };
-      repository.findOne = jest.fn().mockResolvedValue(mockTask);
-      repository.save = jest.fn().mockResolvedValue(updatedTask);
+      const mockTask: Task = {
+        id: 1,
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 1,
+        category: 'Personal',
+        completed: true,
+        user: { id: 1 },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      expect(await service.toggleCompletion(1)).toEqual(updatedTask);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(repository.save).toHaveBeenCalled();
+      mockTaskRepository.toggleTaskCompletion.mockResolvedValue(mockTask);
+
+      const result = await service.toggleCompletion(1);
+      expect(result).toEqual(mockTask);
+      expect(repository.toggleTaskCompletion).toHaveBeenCalledWith(1);
     });
-  });
 
-  describe('remove', () => {
-    it('should remove a task successfully', async () => {
-      await service.remove(1);
-      expect(repository.delete).toHaveBeenCalledWith(1);
+    it('should throw an error when toggling completion fails', async () => {
+      mockTaskRepository.toggleTaskCompletion.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.toggleCompletion(1)).rejects.toThrow(Error);
     });
   });
 });

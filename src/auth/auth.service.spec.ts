@@ -1,25 +1,21 @@
+// src/auth/auth.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
-import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let mockUserRepository: any;
-  let jwtService: any;
+  let userRepository;
+
+  const mockUserRepository = {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
 
   beforeEach(async () => {
-    mockUserRepository = {
-      findOne: jest.fn(),
-      create: jest.fn((dto) => dto),
-      save: jest.fn((user) => Promise.resolve({ id: '1', ...user })),
-    };
-
-    jwtService = {
-      sign: jest.fn(() => 'mock-jwt-token'),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -27,14 +23,11 @@ describe('AuthService', () => {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
         },
-        {
-          provide: JwtService,
-          useValue: jwtService,
-        },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
+    userRepository = module.get(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
@@ -42,17 +35,52 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should register a user successfully', async () => {
+    it('should register a new user successfully', async () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'password123',
-        firstName: 'Test',
-        lastName: 'User',
+        firstName: 'John',
+        lastName: 'Doe',
       };
-      mockUserRepository.findOne.mockResolvedValue(null);
+
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      
+      const mockUser = {
+        id: 1,
+        email: registerDto.email,
+        password: hashedPassword,
+        firstName: registerDto.firstName,
+        lastName: registerDto.lastName,
+      };
+
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.create.mockReturnValue(mockUser);
+      userRepository.save.mockResolvedValue(mockUser);
 
       const result = await service.register(registerDto);
-      expect(result).toBeDefined();
+
+      expect(result).toEqual({
+        success: true,
+        data: {
+          userId: 1,
+          message: 'User registered successfully.',
+        },
+      });
+    });
+
+    it('should throw conflict exception if user already exists', async () => {
+      const registerDto = {
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'John',
+        lastName: 'Doe',
+      };
+
+      userRepository.findOne.mockResolvedValue({ id: 1, ...registerDto });
+
+      await expect(service.register(registerDto)).rejects.toThrow(
+        'An account with this email already exists.',
+      );
     });
   });
 });

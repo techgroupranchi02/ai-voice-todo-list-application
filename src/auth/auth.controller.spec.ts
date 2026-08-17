@@ -1,12 +1,18 @@
-// src/auth/auth.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
+
+  const mockAuthService = {
+    register: jest.fn(),
+    validateUser: jest.fn(),
+    login: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -14,9 +20,7 @@ describe('AuthController', () => {
       providers: [
         {
           provide: AuthService,
-          useValue: {
-            register: jest.fn(),
-          },
+          useValue: mockAuthService,
         },
       ],
     }).compile();
@@ -30,25 +34,70 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('should register a user successfully', async () => {
-      const registerDto: RegisterDto = {
-        email: 'test@example.com',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe',
+    const registerDto: RegisterDto = {
+      email: 'test@example.com',
+      password: 'password123',
+      firstName: 'John',
+      lastName: 'Doe',
+    };
+
+    it('should register a new user successfully', async () => {
+      const mockResult = {
+        userId: '1',
+        message: 'User registered successfully.',
       };
 
-      const result = {
+      mockAuthService.register.mockResolvedValue(mockResult);
+
+      const result = await controller.register(registerDto);
+
+      expect(result).toEqual({
+        success: true,
+        data: mockResult,
+      });
+    });
+
+    it('should throw an error if registration fails', async () => {
+      mockAuthService.register.mockRejectedValue(new Error('Registration failed'));
+
+      await expect(controller.register(registerDto)).rejects.toThrow('Registration failed');
+    });
+  });
+
+  describe('login', () => {
+    const loginDto: LoginDto = {
+      email: 'test@example.com',
+      password: 'password123',
+    };
+
+    it('should login user successfully', async () => {
+      const mockUser = {
+        id: 1,
+        email: 'test@example.com',
+      };
+
+      const mockToken = {
+        access_token: 'mock-jwt-token',
+      };
+
+      mockAuthService.validateUser.mockResolvedValue(mockUser);
+      mockAuthService.login.mockResolvedValue(mockToken);
+
+      const result = await controller.login(loginDto);
+
+      expect(result).toEqual({
         success: true,
         data: {
-          userId: '123e4567-e89b-12d3-a456-426614174000',
-          message: 'User registered successfully.',
+          ...mockToken,
+          userId: '1',
         },
-      };
+      });
+    });
 
-      jest.spyOn(authService, 'register').mockResolvedValue(result);
+    it('should throw an error for invalid credentials', async () => {
+      mockAuthService.validateUser.mockResolvedValue(null);
 
-      expect(await controller.register(registerDto)).toBe(result);
+      await expect(controller.login(loginDto)).rejects.toThrow('Invalid credentials');
     });
   });
 });

@@ -1,4 +1,2 @@
 
-## 🐳 Running with Docker
-
-### Build and Start Services
+2. **Run with Docker Compose**

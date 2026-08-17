@@ -1,2 +1,4 @@
 
-### Testing
+## 🐳 Running with Docker
+
+1. **Build the Docker image**

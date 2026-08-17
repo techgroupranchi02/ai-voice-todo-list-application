@@ -1,4 +1,2 @@
 
-## ▶️ Running the Project
-
-### Development Mode
+### Production Mode

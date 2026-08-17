@@ -1,1 +1,3 @@
-4. Set up environment variables in a `.env` file:
+
+## ▶️ Running the Project
+### Development Mode

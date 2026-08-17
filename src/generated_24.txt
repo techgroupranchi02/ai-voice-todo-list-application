@@ -1,4 +1,2 @@
 
-## 🧪 Testing & Build Commands
-
-### Test Commands
+### Migration Commands

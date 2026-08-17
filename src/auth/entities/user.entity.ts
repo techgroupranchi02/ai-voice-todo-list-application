@@ -1,11 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Entity('users')
 export class User {
@@ -13,26 +7,29 @@ export class User {
   id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
-  @IsNotEmpty()
   firstName: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  @IsOptional()
   lastName: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
-  @IsEmail()
-  @IsNotEmpty()
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
   email: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
-  @IsNotEmpty()
-  @MinLength(6)
   password: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    if (!this.password) return;
+    
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    this.password = await bcrypt.hash(this.password, saltRounds);
+  }
 }

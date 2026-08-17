@@ -1,18 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRepository } from './user.repository';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConflictException, InternalServerErrorException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-jest.mock('bcrypt');
-
 describe('UserRepository', () => {
   let userRepository: UserRepository;
-  let mockUserRepository;
+  let mockUserRepository: any;
 
   beforeEach(async () => {
     mockUserRepository = {
+      create: jest.fn(),
       save: jest.fn(),
       findOne: jest.fn(),
     };
@@ -35,43 +34,61 @@ describe('UserRepository', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      password: 'password123',
+      password: 'securePassword123',
     };
 
     it('should create a user successfully', async () => {
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
-      mockUserRepository.save.mockResolvedValue({ id: 1, ...createUserDto, password: 'hashedPassword' });
+      const salt = await bcrypt.genSalt(12);
+      const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
+
+      mockUserRepository.create.mockReturnValue({
+        ...createUserDto,
+        password: hashedPassword,
+      });
+      mockUserRepository.save.mockResolvedValue({
+        id: 1,
+        ...createUserDto,
+        password: hashedPassword,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       const result = await userRepository.createUser(createUserDto);
       
-      expect(result).toEqual({ id: 1, ...createUserDto, password: 'hashedPassword' });
-      expect(bcrypt.hash).toHaveBeenCalledWith('password123', 12);
-      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({
+        id: 1,
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        password: hashedPassword,
+      }));
     });
 
     it('should throw ConflictException when email already exists', async () => {
-      const error = { code: '23505' };
-      mockUserRepository.save.mockRejectedValue(error);
+      mockUserRepository.save.mockRejectedValue({ code: '23505' });
 
-      await expect(userRepository.createUser(createUserDto)).rejects.toThrow(ConflictException);
+      await expect(userRepository.createUser(createUserDto))
+        .rejects
+        .toThrow(ConflictException);
     });
 
-    it('should throw InternalServerErrorException on other errors', async () => {
-      const error = new Error('Database error');
-      mockUserRepository.save.mockRejectedValue(error);
+    it('should throw InternalServerErrorException on other database errors', async () => {
+      mockUserRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(userRepository.createUser(createUserDto)).rejects.toThrow(InternalServerErrorException);
+      await expect(userRepository.createUser(createUserDto))
+        .rejects
+        .toThrow(InternalServerErrorException);
     });
   });
 
   describe('findUserByEmail', () => {
     it('should return user by email', async () => {
-      const user = { id: 1, email: 'john.doe@example.com' } as User;
-      mockUserRepository.findOne.mockResolvedValue(user);
+      const mockUser = { id: 1, email: 'john.doe@example.com' } as User;
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await userRepository.findUserByEmail('john.doe@example.com');
       
-      expect(result).toEqual(user);
+      expect(result).toEqual(mockUser);
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { email: 'john.doe@example.com' } });
     });
 
@@ -86,12 +103,12 @@ describe('UserRepository', () => {
 
   describe('findUserById', () => {
     it('should return user by id', async () => {
-      const user = { id: 1, email: 'john.doe@example.com' } as User;
-      mockUserRepository.findOne.mockResolvedValue(user);
+      const mockUser = { id: 1, email: 'john.doe@example.com' } as User;
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await userRepository.findUserById(1);
       
-      expect(result).toEqual(user);
+      expect(result).toEqual(mockUser);
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
     });
 

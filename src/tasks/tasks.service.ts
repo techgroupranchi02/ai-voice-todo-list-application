@@ -1,4 +1,3 @@
-// src/tasks/tasks.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,35 +12,46 @@ export class TasksService {
     private tasksRepository: Repository<Task>,
   ) {}
 
-  async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const task = this.tasksRepository.create(createTaskDto);
+  async create(createTaskDto: CreateTaskDto, userId: number): Promise<Task> {
+    const task = this.tasksRepository.create({
+      ...createTaskDto,
+      user: { id: userId },
+    });
     return await this.tasksRepository.save(task);
   }
 
-  async findAll(): Promise<Task[]> {
-    return await this.tasksRepository.find();
+  async findAll(userId: number): Promise<Task[]> {
+    return await this.tasksRepository.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  async findOne(id: number): Promise<Task> {
+  async findOne(id: number, userId: number): Promise<Task> {
     const task = await this.tasksRepository.findOne({
-      where: { id },
+      where: { id, user: { id: userId } },
     });
     
     if (!task) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
+      throw new NotFoundException('Task not found');
     }
     
     return task;
   }
 
-  async update(id: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
-    const task = await this.findOne(id);
+  async update(id: number, updateTaskDto: UpdateTaskDto, userId: number): Promise<Task> {
+    const task = await this.findOne(id, userId);
+    
     Object.assign(task, updateTaskDto);
+    
     return await this.tasksRepository.save(task);
   }
 
-  async remove(id: number): Promise<void> {
-    const task = await this.findOne(id);
-    await this.tasksRepository.remove(task);
+  async remove(id: number, userId: number): Promise<void> {
+    const result = await this.tasksRepository.delete({ id, user: { id: userId } });
+    
+    if (result.affected === 0) {
+      throw new NotFoundException('Task not found');
+    }
   }
 }

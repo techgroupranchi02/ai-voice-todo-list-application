@@ -1,15 +1,11 @@
-import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+// src/auth/auth.service.ts
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcryptjs';
-import { JwtService } from '@nestjs/jwt';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,8 +15,8 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ userId: string }> {
-    const { email, password, firstName, lastName } = registerDto;
+  async register(createUserDto: CreateUserDto): Promise<{ userId: string; message: string }> {
+    const { email, password, firstName, lastName } = createUserDto;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
@@ -28,12 +24,11 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new UnauthorizedException('An account with this email already exists.');
     }
 
-    // Hash password with salt rounds validation
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const user = this.userRepository.create({
@@ -44,45 +39,10 @@ export class AuthService {
     });
 
     const savedUser = await this.userRepository.save(user);
-    
-    return {
-      userId: savedUser.id.toString(),
-    };
-  }
-
-  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
-    const { email, password } = loginDto;
-
-    // Find user
-    const user = await this.userRepository.findOne({
-      where: { email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Generate JWT token
-    const payload = { 
-      sub: user.id.toString(), 
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
-    
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '1h',
-    });
 
     return {
-      accessToken,
+      userId: savedUser.id,
+      message: 'User registered successfully.',
     };
   }
 
@@ -91,10 +51,25 @@ export class AuthService {
       where: { email },
     });
 
-    if (user && await bcrypt.compare(password, user.password)) {
-      return user;
+    if (!user) {
+      return null;
     }
-    
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (isPasswordValid) {
+      // Remove password from returned user object
+      const { password: _, ...result } = user;
+      return result;
+    }
+
     return null;
+  }
+
+  async login(user: User) {
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }

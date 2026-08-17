@@ -1,17 +1,2 @@
-# AI Voice Todo List Application
 
-A Flask-based application for managing tasks with voice input capabilities.
-
-## Features
-
-- User authentication (register/login)
-- Task management (create, view, update, delete)
-- Voice task creation from audio input
-- Team collaboration features
-- Secure JWT-based authentication
-- Database persistence with SQLAlchemy
-
-## Installation
-
-1. Clone the repository
-2. Create a virtual environment:
+5. **Run database migrations (if applicable)**

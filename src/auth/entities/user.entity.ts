@@ -1,5 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { IsEmail, IsNotEmpty, MaxLength } from 'class-validator';
 
 @Entity('users')
 export class User {
@@ -8,25 +14,25 @@ export class User {
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   @IsNotEmpty()
+  @MaxLength(255)
   firstName: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  @IsOptional()
   lastName: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false, unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
   @IsEmail()
   @IsNotEmpty()
+  @MaxLength(255)
   email: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   @IsNotEmpty()
-  @MinLength(6)
   password: string;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', nullable: false })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 }

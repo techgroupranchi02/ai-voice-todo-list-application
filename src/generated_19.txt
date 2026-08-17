@@ -1,4 +1,4 @@
 
-### Sample Endpoints
+## 🔌 API Documentation
 
-#### Authentication
+### Base URL

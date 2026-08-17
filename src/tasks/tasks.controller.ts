@@ -1,103 +1,119 @@
+// src/tasks/tasks.controller.ts
 import {
   Controller,
+  Get,
   Post,
   Body,
-  UseGuards,
-  Request,
-  HttpCode,
-  HttpStatus,
   Param,
-  ParseUUIDPipe,
+  Put,
+  Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { UpdateTaskDto } from './dto/update-task.dto';
+import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('tasks')
 @Controller('api/v1/tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
-  async create(@Body() createTaskDto: CreateTaskDto, @Request() req) {
-    const userId = req.user.userId;
-    
-    try {
-      const result = await this.tasksService.create(createTaskDto, userId);
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      if (error.message === 'Invalid input') {
-        return {
-          success: false,
-          error: {
-            code: HttpStatus.BAD_REQUEST,
-            message: 'Title cannot be empty.',
-          },
-        };
-      }
-      
-      throw error;
-    }
+  @ApiOperation({ summary: 'Create a new task' })
+  @ApiResponse({
+    status: 201,
+    description: 'Task created successfully',
+    type: CreateTaskDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  async create(@Body() createTaskDto: CreateTaskDto) {
+    const task = await this.tasksService.create(createTaskDto);
+    return {
+      success: true,
+      data: {
+        taskId: task.id,
+        message: 'Task created successfully.',
+      },
+    };
   }
 
-  @Post('voice')
-  @UseGuards(AuthGuard('jwt'))
-  @HttpCode(HttpStatus.OK)
-  async createFromVoice(@Body() createVoiceTaskDto: CreateVoiceTaskDto, @Request() req) {
-    const userId = req.user.userId;
-    
-    try {
-      const result = await this.tasksService.createFromVoice(createVoiceTaskDto, userId);
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      if (error.message === 'Audio processing error') {
-        return {
-          success: false,
-          error: {
-            code: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: 'Error processing the audio data.',
-          },
-        };
-      }
-      
-      throw error;
-    }
+  @Get()
+  @ApiOperation({ summary: 'Get all tasks' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all tasks',
+    type: [CreateTaskDto],
+  })
+  async findAll() {
+    const tasks = await this.tasksService.findAll();
+    return {
+      success: true,
+      data: tasks,
+    };
   }
 
-  @Post('teams/:team_id')
-  @UseGuards(AuthGuard('jwt'))
-  async createInTeam(
-    @Param('team_id', ParseUUIDPipe) teamId: string,
-    @Body() createTaskDto: CreateTaskDto,
-    @Request() req
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a task by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task found',
+    type: CreateTaskDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+  })
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const task = await this.tasksService.findOne(id);
+    return {
+      success: true,
+      data: task,
+    };
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update a task by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task updated successfully',
+    type: CreateTaskDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+  })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateTaskDto: UpdateTaskDto,
   ) {
-    const userId = req.user.userId;
-    
-    try {
-      const result = await this.tasksService.createInTeam(createTaskDto, userId, teamId);
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      if (error.message === 'Invalid input') {
-        return {
-          success: false,
-          error: {
-            code: HttpStatus.BAD_REQUEST,
-            message: 'Title cannot be empty.',
-          },
-        };
-      }
-      
-      throw error;
-    }
+    const task = await this.tasksService.update(id, updateTaskDto);
+    return {
+      success: true,
+      data: task,
+    };
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a task by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+  })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.tasksService.remove(id);
+    return {
+      success: true,
+      data: {
+        message: 'Task deleted successfully.',
+      },
+    };
   }
 }

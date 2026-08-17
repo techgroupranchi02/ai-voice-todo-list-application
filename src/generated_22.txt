@@ -1,2 +1,4 @@
 
-2. **Run Migrations**:
+## 🧪 Testing & Build Commands
+
+### Unit Tests

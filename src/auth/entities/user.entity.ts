@@ -1,5 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  BeforeInsert,
+  BeforeUpdate,
+} from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 
 @Entity('users')
 export class User {
@@ -7,26 +15,33 @@ export class User {
   id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
-  @IsNotEmpty()
   firstName: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  @IsOptional()
   lastName: string;
 
   @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
-  @IsEmail()
-  @IsNotEmpty()
   email: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
-  @IsNotEmpty()
-  @MinLength(6)
   password: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamp', nullable: false })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
   updatedAt: Date;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    if (this.password && !this.password.startsWith('$2b$')) {
+      const saltRounds = 10;
+      this.password = await bcrypt.hash(this.password, saltRounds);
+    }
+  }
+
+  async comparePassword(password: string): Promise<boolean> {
+    return bcrypt.compare(password, this.password);
+  }
 }

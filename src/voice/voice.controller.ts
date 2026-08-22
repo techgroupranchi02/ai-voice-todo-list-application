@@ -1,32 +1,42 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, HttpStatus } from '@nestjs/common';
 import { VoiceService } from './voice.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { User } from '../auth/entities/user.entity';
+import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
-@Controller('tasks')
+@ApiTags('Voice Input')
+@Controller('tasks/voice')
 export class VoiceController {
   constructor(private readonly voiceService: VoiceService) {}
 
-  @Post('voice')
+  @Post()
   @UseGuards(AuthGuard)
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Task created successfully from voice input',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Error processing the audio data',
+  })
   async createTaskFromVoice(
-    @Body() body: { audioData: string },
-    @Request() req,
+    @Body() createVoiceTaskDto: CreateVoiceTaskDto,
+    @Req() req,
   ) {
-    const user: User = req.user;
+    const userId = req.user.id;
     
-    if (!body.audioData) {
-      throw new Error('Audio data is required');
-    }
-
-    const createdTask = await this.voiceService.processVoiceInput(body.audioData, user);
+    const result = await this.voiceService.processVoiceInput(
+      createVoiceTaskDto.audioData,
+      userId,
+    );
     
     return {
       success: true,
-      data: {
-        taskId: createdTask.id,
-        message: 'Task created from voice input successfully.',
-      },
+      data: result,
     };
   }
 }

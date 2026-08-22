@@ -1,85 +1,72 @@
-# Productivity App - Task Management & Voice Input System
+# VoiceTaskManager
 
-[![License](https://img.shields.io/badge/license-UNLICENSED-blue)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-green)](https://github.com/your-repo/productivity-app)
-[![Coverage Status](https://img.shields.io/badge/coverage-85%25-green)](https://github.com/your-repo/productivity-app)
+> A voice-enabled task management application with AI transcription capabilities
 
 ## 📌 Table of Contents
 - [📖 About the Project](#-about-the-project)
 - [✨ Features](#-features)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [📂 Project Structure](#-project-structure)
-- [📋 Prerequisites](#-prerequisites)
-- [🚀 Installation](#-installation)
+- [📋 Prerequisites & Version Check](#-prerequisites--version-check)
+- [🚀 Installation Steps](#-installation-steps)
 - [🔐 Environment Variables](#-environment-variables)
-- [▶️ Running the Project](#-running-the-project)
-- [🐳 Docker Usage](#-docker-usage)
+- [▶️ Running the Project](#️-running-the-project)
+- [🐳 Running with Docker](#-running-with-docker)
 - [🔌 API Documentation](#-api-documentation)
-- [🗄️ Database Setup](#-database-setup)
-- [🧪 Testing](#-testing)
-- [🚀 Deployment](#-deployment)
-- [🔧 Maintenance Commands](#-maintenance-commands)
+- [🗄️ Database Setup & Migration](#-database-setup--migration)
+- [🧪 Testing & Build Commands](#-testing--build-commands)
+- [🚀 Deployment Guide](#-deployment-guide)
+- [🔧 Useful Maintenance Commands](#-useful-maintenance-commands)
 - [🐛 Troubleshooting](#-troubleshooting)
 - [🔒 Security Guidelines](#-security-guidelines)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
-- [👨‍💻 Maintainer](#-maintainer)
+- [👨‍💻 Maintainer Info](#-maintainer-info)
 - [⭐ Support](#-support)
 
 ## 📖 About the Project
-
-**Problem Statement:** Modern professionals struggle with task management and productivity tracking across multiple platforms. Voice input capabilities are often missing from traditional productivity tools, making it difficult to capture ideas quickly.
-
-**Solution:** Productivity App is a comprehensive solution that combines robust task management with voice input functionality. It provides users with an intuitive interface for creating, organizing, and completing tasks while offering hands-free voice input capabilities for seamless idea capture.
-
-The application features:
-- Task creation, organization, and completion tracking
-- Voice input for task creation and note-taking
-- Team collaboration features
-- Real-time updates and notifications
-- Secure authentication and authorization
+VoiceTaskManager is a modern task management application that leverages voice recognition and AI transcription to create tasks through natural speech. Users can speak their tasks, which are automatically transcribed and converted into actionable items in the system. The application features real-time updates, task completion tracking, and seamless integration with AI-powered transcription services.
 
 ## ✨ Features
-
-- 📋 **Task Management** - Create, update, delete, and organize tasks with categories and priorities
-- 🎤 **Voice Input** - Record voice notes and transcribe them into text for task creation
-- 👥 **Team Collaboration** - Share tasks and collaborate with team members
-- 🔒 **Secure Authentication** - JWT-based authentication with refresh token rotation
-- 📊 **Real-time Updates** - WebSocket-powered real-time notifications and updates
-- 📱 **Responsive UI** - Mobile-first design for all device sizes
-- 🛡️ **Security Features** - Input validation, rate limiting, and secure password handling
-- 🔄 **Task Lifecycle** - Complete task toggling with visual status indicators
-- 🗂️ **Category Management** - Organize tasks into meaningful categories
+- 🎤 **Voice Task Creation** - Create tasks using voice commands with real-time transcription
+- 🧠 **AI Transcription** - Automatic speech-to-text conversion using Ollama AI
+- 📋 **Task Management** - Complete task lifecycle with status tracking and updates
+- 🔁 **Real-time Updates** - WebSocket-powered live task synchronization
+- 🔐 **Secure Authentication** - JWT-based authentication with refresh token rotation
+- 📊 **Task Analytics** - Progress tracking and productivity insights
+- 🌐 **Cross-platform Support** - Mobile-first responsive design with React Native
+- 🛡️ **Security Features** - Rate limiting, input validation, and secure token handling
 
 ## 🛠️ Tech Stack
-
 ### Backend
 - **Framework**: NestJS (Node.js)
 - **Language**: TypeScript
-- **Database**: PostgreSQL with TypeORM
+- **Database**: PostgreSQL
 - **Cache**: Redis
 - **Authentication**: JWT with Passport.js
-- **API Documentation**: Swagger/OpenAPI
-- **Logging**: Winston
+- **AI Integration**: Ollama API for transcription
+- **Real-time**: WebSocket/Socket.IO
 
 ### Frontend
 - **Framework**: React Native (TypeScript)
-- **UI Library**: React Native Components
+- **UI Library**: React Native Elements
 - **State Management**: Redux Toolkit
 - **Navigation**: React Navigation
+- **Audio Handling**: React Native Voice
 
 ### Database
-- **Primary**: PostgreSQL
-- **Cache**: Redis
+- **Primary DB**: PostgreSQL with TypeORM
+- **Cache**: Redis for session and rate limiting
 
 ### AI/Automation
-- **Speech Recognition**: Web Speech API
-- **Transcription**: Browser-based speech recognition
+- **Transcription**: Ollama (Llama3 model)
+- **NLP**: Natural language processing for task extraction
 
 ### DevOps
-- **Containerization**: Docker
-- **CI/CD**: GitHub Actions
-- **Monitoring**: Winston logging
+- **Build Tool**: Nest CLI, Webpack
 - **Testing**: Jest, Supertest
+- **Linting**: ESLint, Prettier
+- **Version Control**: Git with Husky hooks
+- **Deployment**: Docker, PM2 (optional)
 
 ## 📂 Project Structure

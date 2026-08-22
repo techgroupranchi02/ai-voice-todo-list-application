@@ -1,33 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeamsController } from './teams.controller';
 import { TeamsService } from './teams.service';
-import { CreateTaskDto } from '../tasks/dto/create-task.dto';
-import { User } from '../auth/entities/user.entity';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 
 describe('TeamsController', () => {
   let controller: TeamsController;
   let service: TeamsService;
 
-  const mockUser = {
-    id: 1,
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    password: 'hashedPassword',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const mockTask = {
-    id: 1,
-    title: 'Test Task',
-    description: 'Test Description',
-    dueDate: new Date(),
-    priority: 1,
-    completed: false,
-    user: { id: 1 } as User,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  const mockTeamsService = {
+    createTeam: jest.fn(),
+    findAllTeams: jest.fn(),
+    findOneTeam: jest.fn(),
+    updateTeam: jest.fn(),
+    removeTeam: jest.fn(),
+    createTaskForTeam: jest.fn(),
+    findTeamTasks: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -36,10 +25,7 @@ describe('TeamsController', () => {
       providers: [
         {
           provide: TeamsService,
-          useValue: {
-            createTeamTask: jest.fn().mockResolvedValue(mockTask),
-            getTeamTasks: jest.fn().mockResolvedValue([mockTask]),
-          },
+          useValue: mockTeamsService,
         },
       ],
     }).compile();
@@ -48,43 +34,153 @@ describe('TeamsController', () => {
     service = module.get<TeamsService>(TeamsService);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('createTeamTask', () => {
-    const createTaskDto: CreateTaskDto = {
-      title: 'Test Task',
-      description: 'Test Description',
-      dueDate: new Date(),
-      priority: 1,
-    };
+  describe('createTeam', () => {
+    it('should create a team and return it', async () => {
+      const createTeamDto: CreateTeamDto = {
+        name: 'Test Team',
+        description: 'A test team',
+      };
 
-    it('should create a team task successfully', async () => {
-      const result = await controller.createTeamTask(1, createTaskDto, mockUser);
+      const mockTeam = { id: 1, ...createTeamDto };
       
-      expect(result).toEqual({
-        success: true,
-        data: {
-          taskId: mockTask.id,
-          message: 'Team task created successfully.',
-        },
-      });
-      expect(service.createTeamTask).toHaveBeenCalledWith(1, createTaskDto, mockUser.id);
+      jest.spyOn(service, 'createTeam').mockResolvedValue(mockTeam);
+
+      const result = await controller.createTeam(createTeamDto);
+      expect(result).toEqual(mockTeam);
+      expect(service.createTeam).toHaveBeenCalledWith(createTeamDto);
     });
   });
 
-  describe('getTeamTasks', () => {
-    it('should return team tasks successfully', async () => {
-      const result = await controller.getTeamTasks(1, mockUser);
+  describe('findAllTeams', () => {
+    it('should return all teams', async () => {
+      const mockTeams = [
+        { id: 1, name: 'Team 1', description: 'Description 1' },
+        { id: 2, name: 'Team 2', description: 'Description 2' },
+      ];
+
+      jest.spyOn(service, 'findAllTeams').mockResolvedValue(mockTeams);
+
+      const result = await controller.findAllTeams();
+      expect(result).toEqual(mockTeams);
+      expect(service.findAllTeams).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOneTeam', () => {
+    it('should return a team by id', async () => {
+      const mockTeam = { id: 1, name: 'Test Team', description: 'Description' };
       
-      expect(result).toEqual({
-        success: true,
-        data: {
-          tasks: [mockTask],
-        },
+      jest.spyOn(service, 'findOneTeam').mockResolvedValue(mockTeam);
+
+      const result = await controller.findOneTeam(1);
+      expect(result).toEqual(mockTeam);
+      expect(service.findOneTeam).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException when team not found', async () => {
+      jest.spyOn(service, 'findOneTeam').mockRejectedValue(new NotFoundException());
+
+      await expect(controller.findOneTeam(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateTeam', () => {
+    it('should update and return a team', async () => {
+      const updateTeamDto: UpdateTeamDto = {
+        name: 'Updated Team',
+        description: 'Updated description',
+      };
+
+      const mockTeam = { id: 1, ...updateTeamDto };
+      
+      jest.spyOn(service, 'updateTeam').mockResolvedValue(mockTeam);
+
+      const result = await controller.updateTeam(1, updateTeamDto);
+      expect(result).toEqual(mockTeam);
+      expect(service.updateTeam).toHaveBeenCalledWith(1, updateTeamDto);
+    });
+
+    it('should throw NotFoundException when team not found', async () => {
+      const updateTeamDto: UpdateTeamDto = {
+        name: 'Updated Team',
+        description: 'Updated description',
+      };
+
+      jest.spyOn(service, 'updateTeam').mockRejectedValue(new NotFoundException());
+
+      await expect(controller.updateTeam(999, updateTeamDto)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('removeTeam', () => {
+    it('should remove a team successfully', async () => {
+      jest.spyOn(service, 'removeTeam').mockResolvedValue(undefined);
+
+      await expect(controller.removeTeam(1)).resolves.not.toThrow();
+      expect(service.removeTeam).toHaveBeenCalledWith(1);
+    });
+
+    it('should throw NotFoundException when team not found', async () => {
+      jest.spyOn(service, 'removeTeam').mockRejectedValue(new NotFoundException());
+
+      await expect(controller.removeTeam(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createTaskForTeam', () => {
+    it('should create a task for a team and return it', async () => {
+      const mockTask = {
+        id: 1,
+        title: 'Test Task',
+        description: 'Test Description',
+        teamId: 1,
+        completed: false,
+      };
+
+      jest.spyOn(service, 'createTaskForTeam').mockResolvedValue(mockTask);
+
+      const result = await controller.createTaskForTeam(1, {
+        title: 'Test Task',
+        description: 'Test Description',
       });
-      expect(service.getTeamTasks).toHaveBeenCalledWith(1, mockUser.id);
+      
+      expect(result).toEqual(mockTask);
+      expect(service.createTaskForTeam).toHaveBeenCalledWith(1, {
+        title: 'Test Task',
+        description: 'Test Description',
+      });
+    });
+
+    it('should throw NotFoundException when team not found', async () => {
+      jest.spyOn(service, 'createTaskForTeam').mockRejectedValue(new NotFoundException());
+
+      await expect(controller.createTaskForTeam(999, {
+        title: 'Test Task',
+        description: 'Test Description',
+      })).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findTeamTasks', () => {
+    it('should return tasks for a team', async () => {
+      const mockTasks = [
+        { id: 1, title: 'Task 1', teamId: 1 },
+        { id: 2, title: 'Task 2', teamId: 1 },
+      ];
+
+      jest.spyOn(service, 'findTeamTasks').mockResolvedValue(mockTasks);
+
+      const result = await controller.findTeamTasks(1);
+      expect(result).toEqual(mockTasks);
+      expect(service.findTeamTasks).toHaveBeenCalledWith(1);
     });
   });
 });

@@ -1,45 +1,44 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
-import { Category } from '../../categories/entities/category.entity';
 
 @Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   title: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'due_date', type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   dueDate: Date;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: false, default: 0 })
   priority: number;
 
-  @Column({ name: 'category_id', nullable: true })
-  categoryId: number;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  category: string;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean', nullable: false, default: false })
   completed: boolean;
 
-  @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'timestamp', nullable: false })
   createdAt: Date;
 
-  @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP' })
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
   updatedAt: Date;
-
-  // Relations
-  @ManyToOne(() => User, user => user.tasks)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @ManyToOne(() => Category, category => category.tasks)
-  @JoinColumn({ name: 'category_id' })
-  category: Category;
 }

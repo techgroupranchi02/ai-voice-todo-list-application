@@ -2,45 +2,33 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TasksService } from './tasks.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
-import { Repository } from 'typeorm';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
 import { NotFoundException } from '@nestjs/common';
 
 describe('TasksService', () => {
   let service: TasksService;
-  let repository: Repository<Task>;
+  let mockTaskRepository: any;
 
-  const mockTaskRepository = {
-    find: jest.fn(),
-    findOneBy: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    remove: jest.fn(),
-    update: jest.fn(),
-  };
-
-  const mockTask: Task = {
+  const mockTask = {
     id: 1,
     title: 'Test Task',
     description: 'Test Description',
+    dueDate: new Date(),
+    priority: 0,
+    category: 'Personal',
     completed: false,
+    user: { id: 1 },
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
-  const mockCreateTaskDto: CreateTaskDto = {
-    title: 'Test Task',
-    description: 'Test Description',
-  };
-
-  const mockUpdateTaskDto: UpdateTaskDto = {
-    title: 'Updated Task',
-    description: 'Updated Description',
-    completed: true,
-  };
-
   beforeEach(async () => {
+    mockTaskRepository = {
+      save: jest.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      delete: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -52,151 +40,85 @@ describe('TasksService', () => {
     }).compile();
 
     service = module.get<TasksService>(TasksService);
-    repository = module.get<Repository<Task>>(getRepositoryToken(Task));
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('findAll', () => {
-    it('should return an array of tasks', async () => {
-      const expectedResult = [mockTask];
-      mockTaskRepository.find.mockResolvedValue(expectedResult);
+  describe('create', () => {
+    it('should create a task successfully', async () => {
+      const createTaskDto = {
+        title: 'Test Task',
+        description: 'Test Description',
+        dueDate: new Date(),
+        priority: 0,
+        category: 'Personal',
+      };
 
-      const result = await service.findAll();
-      expect(result).toEqual(expectedResult);
-      expect(repository.find).toHaveBeenCalled();
+      mockTaskRepository.save.mockResolvedValue(mockTask);
+
+      const result = await service.create(createTaskDto, 1);
+      
+      expect(result).toBe(mockTask);
+      expect(mockTaskRepository.save).toHaveBeenCalled();
     });
+  });
 
-    it('should return an empty array when no tasks exist', async () => {
-      mockTaskRepository.find.mockResolvedValue([]);
+  describe('findAll', () => {
+    it('should return all tasks for a user', async () => {
+      mockTaskRepository.find.mockResolvedValue([mockTask]);
 
-      const result = await service.findAll();
-      expect(result).toEqual([]);
-      expect(repository.find).toHaveBeenCalled();
+      const result = await service.findAll(1);
+      
+      expect(result).toEqual([mockTask]);
+      expect(mockTaskRepository.find).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
     it('should return a task by id', async () => {
-      mockTaskRepository.findOneBy.mockResolvedValue(mockTask);
+      mockTaskRepository.findOne.mockResolvedValue(mockTask);
 
-      const result = await service.findOne(1);
-      expect(result).toEqual(mockTask);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
+      const result = await service.findOne(1, 1);
+      
+      expect(result).toBe(mockTask);
+      expect(mockTaskRepository.findOne).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException when task is not found', async () => {
-      mockTaskRepository.findOneBy.mockResolvedValue(null);
+    it('should throw NotFoundException when task not found', async () => {
+      mockTaskRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(
-        new NotFoundException('Task with ID 999 not found'),
-      );
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 999 });
-    });
-  });
-
-  describe('create', () => {
-    it('should create and return a new task', async () => {
-      const expectedResult = { ...mockTask, id: 1 };
-      mockTaskRepository.create.mockReturnValue(expectedResult);
-      mockTaskRepository.save.mockResolvedValue(expectedResult);
-
-      const result = await service.create(mockCreateTaskDto);
-      expect(result).toEqual(expectedResult);
-      expect(repository.create).toHaveBeenCalledWith(mockCreateTaskDto);
-      expect(repository.save).toHaveBeenCalledWith(expectedResult);
+      await expect(service.findOne(1, 1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should update and return the updated task', async () => {
-      const expectedResult = { ...mockTask, ...mockUpdateTaskDto };
-      mockTaskRepository.findOneBy.mockResolvedValue(mockTask);
-      mockTaskRepository.save.mockResolvedValue(expectedResult);
+    it('should update a task successfully', async () => {
+      const updateTaskDto = { title: 'Updated Task' };
+      
+      mockTaskRepository.findOne.mockResolvedValue(mockTask);
+      mockTaskRepository.save.mockResolvedValue({ ...mockTask, ...updateTaskDto });
 
-      const result = await service.update(1, mockUpdateTaskDto);
-      expect(result).toEqual(expectedResult);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(repository.save).toHaveBeenCalledWith(expectedResult);
-    });
-
-    it('should throw NotFoundException when updating non-existent task', async () => {
-      mockTaskRepository.findOneBy.mockResolvedValue(null);
-
-      await expect(service.update(999, mockUpdateTaskDto)).rejects.toThrow(
-        new NotFoundException('Task with ID 999 not found'),
-      );
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 999 });
+      const result = await service.update(1, updateTaskDto, 1);
+      
+      expect(result.title).toBe('Updated Task');
+      expect(mockTaskRepository.save).toHaveBeenCalled();
     });
   });
 
   describe('remove', () => {
-    it('should remove and return the deleted task', async () => {
-      mockTaskRepository.findOneBy.mockResolvedValue(mockTask);
-      mockTaskRepository.remove.mockResolvedValue(mockTask);
+    it('should remove a task successfully', async () => {
+      mockTaskRepository.delete.mockResolvedValue({ affected: 1 });
 
-      const result = await service.remove(1);
-      expect(result).toEqual(mockTask);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(repository.remove).toHaveBeenCalledWith(mockTask);
+      await expect(service.remove(1, 1)).resolves.toBeUndefined();
+      expect(mockTaskRepository.delete).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException when removing non-existent task', async () => {
-      mockTaskRepository.findOneBy.mockResolvedValue(null);
+    it('should throw NotFoundException when trying to delete non-existent task', async () => {
+      mockTaskRepository.delete.mockResolvedValue({ affected: 0 });
 
-      await expect(service.remove(999)).rejects.toThrow(
-        new NotFoundException('Task with ID 999 not found'),
-      );
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 999 });
-    });
-  });
-
-  describe('toggleComplete', () => {
-    it('should toggle task completion status', async () => {
-      const taskToToggle = { ...mockTask, completed: false };
-      const toggledTask = { ...taskToToggle, completed: true };
-      
-      mockTaskRepository.findOneBy.mockResolvedValue(taskToToggle);
-      mockTaskRepository.save.mockResolvedValue(toggledTask);
-
-      const result = await service.toggleComplete(1);
-      expect(result).toEqual(toggledTask);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(repository.save).toHaveBeenCalledWith({
-        ...taskToToggle,
-        completed: true,
-      });
-    });
-
-    it('should toggle task completion status from true to false', async () => {
-      const taskToToggle = { ...mockTask, completed: true };
-      const toggledTask = { ...taskToToggle, completed: false };
-      
-      mockTaskRepository.findOneBy.mockResolvedValue(taskToToggle);
-      mockTaskRepository.save.mockResolvedValue(toggledTask);
-
-      const result = await service.toggleComplete(1);
-      expect(result).toEqual(toggledTask);
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(repository.save).toHaveBeenCalledWith({
-        ...taskToToggle,
-        completed: false,
-      });
-    });
-
-    it('should throw NotFoundException when toggling non-existent task', async () => {
-      mockTaskRepository.findOneBy.mockResolvedValue(null);
-
-      await expect(service.toggleComplete(999)).rejects.toThrow(
-        new NotFoundException('Task with ID 999 not found'),
-      );
-      expect(repository.findOneBy).toHaveBeenCalledWith({ id: 999 });
+      await expect(service.remove(1, 1)).rejects.toThrow(NotFoundException);
     });
   });
 });

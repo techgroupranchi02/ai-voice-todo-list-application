@@ -2,56 +2,72 @@ import { EntityRepository, Repository } from 'typeorm';
 import { Task } from '../entities/task.entity';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
+import { ConflictException, InternalServerErrorException } from '@nestjs/common';
 
 @EntityRepository(Task)
 export class TaskRepository extends Repository<Task> {
   async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
+    const { title, description, dueDate, priority, categoryId, userId } = createTaskDto;
+
     const task = new Task();
-    task.userId = createTaskDto.userId;
-    task.title = createTaskDto.title;
-    task.description = createTaskDto.description;
-    task.dueDate = createTaskDto.dueDate;
-    task.priority = createTaskDto.priority;
-    task.categoryId = createTaskDto.categoryId;
-    task.completed = false;
+    task.title = title;
+    task.description = description;
+    task.dueDate = dueDate;
+    task.priority = priority;
+    task.categoryId = categoryId;
+    task.userId = userId;
 
-    return await this.save(task);
-  }
-
-  async updateTask(id: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
-    const task = await this.findOne({ where: { id } });
-    
-    if (!task) {
-      throw new Error(`Task with ID ${id} not found`);
+    try {
+      return await task.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('Task creation failed due to constraint violation');
+      } else {
+        throw new InternalServerErrorException('Error creating task');
+      }
     }
-
-    Object.assign(task, updateTaskDto);
-    return await this.save(task);
-  }
-
-  async findUserTasks(userId: number): Promise<Task[]> {
-    return await this.find({ 
-      where: { userId },
-      order: { createdAt: 'DESC' }
-    });
   }
 
   async findTaskById(id: number): Promise<Task> {
     return await this.findOne({ where: { id } });
   }
 
-  async toggleTaskCompletion(id: number): Promise<Task> {
-    const task = await this.findOne({ where: { id } });
-    
+  async updateTask(id: number, updateTaskDto: UpdateTaskDto): Promise<Task> {
+    const task = await this.findTaskById(id);
     if (!task) {
-      throw new Error(`Task with ID ${id} not found`);
+      throw new InternalServerErrorException('Task not found');
     }
-
-    task.completed = !task.completed;
-    return await this.save(task);
+    
+    Object.assign(task, updateTaskDto);
+    return await task.save();
   }
 
   async deleteTask(id: number): Promise<void> {
-    await this.delete({ id });
+    const result = await this.delete({ id });
+    if (result.affected === 0) {
+      throw new InternalServerErrorException('Task not found');
+    }
+  }
+
+  async findTasksByUserId(userId: number): Promise<Task[]> {
+    return await this.find({ where: { userId } });
+  }
+
+  async findCompletedTasksByUserId(userId: number): Promise<Task[]> {
+    return await this.find({ 
+      where: { 
+        userId, 
+        completed: true 
+      } 
+    });
+  }
+
+  async findPendingTasksByUserId(userId: number): Promise<Task[]> {
+    return await this.find({ 
+      where: { 
+        userId, 
+        completed: false 
+      } 
+    });
   }
 }

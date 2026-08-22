@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { VoiceService } from './voice.service';
 import { VoiceController } from './voice.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Task } from '../tasks/entities/task.entity';
-import { User } from '../auth/entities/user.entity';
+import { TasksModule } from '../tasks/tasks.module';
+import { AuthModule } from '../auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, User]),
+    ConfigModule,
+    HttpModule,
+    TasksModule,
+    AuthModule,
   ],
   controllers: [VoiceController],
   providers: [VoiceService],

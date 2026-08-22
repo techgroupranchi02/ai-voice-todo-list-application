@@ -1,17 +1,7 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-  Get,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, HttpStatus, HttpCode } from '@nestjs/common';
 import { TeamsService } from './teams.service';
-import { CreateTaskDto } from '../tasks/dto/create-task.dto';
+import { CreateTeamTaskDto } from './dto/create-team-task.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { GetUser } from '../auth/decorators/get-user.decorator';
-import { User } from '../auth/entities/user.entity';
 
 @Controller('teams')
 @UseGuards(AuthGuard)
@@ -19,33 +9,18 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
   @Post(':team_id/tasks')
+  @HttpCode(HttpStatus.CREATED)
   async createTeamTask(
-    @Param('team_id', ParseIntPipe) teamId: number,
-    @Body() createTaskDto: CreateTaskDto,
-    @GetUser() user: User,
+    @Param('team_id') teamId: number,
+    @Body() createTeamTaskDto: CreateTeamTaskDto,
   ) {
-    const task = await this.teamsService.createTeamTask(teamId, createTaskDto, user.id);
+    const task = await this.teamsService.createTeamTask(teamId, createTeamTaskDto);
     
     return {
       success: true,
       data: {
         taskId: task.id,
         message: 'Team task created successfully.',
-      },
-    };
-  }
-
-  @Get(':team_id/tasks')
-  async getTeamTasks(
-    @Param('team_id', ParseIntPipe) teamId: number,
-    @GetUser() user: User,
-  ) {
-    const tasks = await this.teamsService.getTeamTasks(teamId, user.id);
-    
-    return {
-      success: true,
-      data: {
-        tasks,
       },
     };
   }

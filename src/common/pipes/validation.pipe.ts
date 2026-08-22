@@ -24,11 +24,8 @@ export class ValidationPipe implements PipeTransform<any> {
       
       throw new BadRequestException({
         success: false,
-        error: {
-          statusCode: 400,
-          message: messages.join('. '),
-          timestamp: new Date().toISOString(),
-        },
+        message: 'Validation failed',
+        errors: messages
       });
     }
 

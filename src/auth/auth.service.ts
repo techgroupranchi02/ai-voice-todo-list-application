@@ -1,107 +1,89 @@
-import { Injectable, ConflictException, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from './entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from './repositories/user.repository';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { ConfigService } from '@nestjs/config';
+import { User } from './entities/user.entity';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
+    @InjectRepository(UserRepository)
     private userRepository: UserRepository,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
-  async register(createUserDto: CreateUserDto): Promise<{ userId: number; message: string }> {
-    this.logger.debug('Registering new user');
-    
-    try {
-      const user = await this.userRepository.createUser(createUserDto);
-      
-      this.logger.log(`User registered successfully with ID: ${user.id}`);
-      
-      return {
-        userId: user.id,
-        message: 'User registered successfully.',
-      };
-    } catch (error) {
-      if (error.message.includes('already exists')) {
-        throw new ConflictException(error.message);
-      }
-      throw error;
+  async register(registerDto: RegisterDto): Promise<{ userId: number; message: string }> {
+    const { firstName, lastName, email, password } = registerDto;
+
+    // Check if user already exists
+    const existingUser = await this.userRepository.findUserByEmail(email);
+    if (existingUser) {
+      throw new ConflictException('An account with this email already exists.');
     }
+
+    // Create new user
+    const newUser = await this.userRepository.createUser({
+      firstName,
+      lastName,
+      email,
+      password,
+    });
+
+    return {
+      userId: newUser.id,
+      message: 'User registered successfully.',
+    };
   }
 
-  async login(loginUserDto: LoginUserDto): Promise<{ accessToken: string; refreshToken: string }> {
-    this.logger.debug('Attempting user login');
+  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
+    const { email, password } = loginDto;
     
-    const { email, password } = loginUserDto;
+    // Find user by email
     const user = await this.userRepository.findUserByEmail(email);
-
     if (!user) {
-      this.logger.warn(`Login attempt failed for non-existent email: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await user.comparePassword(password);
-    
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      this.logger.warn(`Login attempt failed for email: ${email} - Invalid password`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Generate JWT tokens
-    const payload = { 
-      id: user.id, 
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName
-    };
+    // Generate JWT token
+    const payload = { id: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
 
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN', '24h'),
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'),
-    });
-
-    this.logger.log(`User logged in successfully: ${user.id}`);
-    
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken };
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    this.logger.debug(`Validating user: ${email}`);
-    
     const user = await this.userRepository.findUserByEmail(email);
-    
-    if (user && await user.comparePassword(password)) {
-      this.logger.log(`User validation successful: ${user.id}`);
-      return user;
+    if (!user) {
+      return null;
     }
-    
-    this.logger.warn(`User validation failed for email: ${email}`);
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (isPasswordValid) {
+      // Remove password from returned user object
+      const { password: _, ...result } = user;
+      return result;
+    }
+
     return null;
   }
 
-  async getProfile(userId: number): Promise<User> {
-    this.logger.debug(`Fetching profile for user ID: ${userId}`);
-    
-    const user = await this.userRepository.findUserById(userId);
-    
+  async getUserById(id: number): Promise<User> {
+    const user = await this.userRepository.findUserById(id);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new NotFoundException('User not found');
     }
     
-    this.logger.log(`Profile fetched successfully for user ID: ${userId}`);
-    return user;
+    // Remove password from returned user object
+    const { password: _, ...result } = user;
+    return result;
   }
 }

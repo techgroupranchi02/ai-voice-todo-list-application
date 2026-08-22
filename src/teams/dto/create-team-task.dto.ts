@@ -1,19 +1,23 @@
-import { IsNotEmpty, IsOptional, IsDateString, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsDate, IsNumber, IsString } from 'class-validator';
 
 export class CreateTeamTaskDto {
   @IsNotEmpty()
+  @IsString()
   title: string;
 
   @IsOptional()
-  description?: string;
+  @IsString()
+  description: string;
 
   @IsOptional()
-  @IsDateString()
-  dueDate?: Date;
+  @IsDate()
+  dueDate: Date;
+
+  @IsNotEmpty()
+  @IsNumber()
+  priority: number;
 
   @IsOptional()
-  priority?: number;
-
-  @IsOptional()
-  assigneeId?: string;
+  @IsString()
+  assigneeId: string;
 }

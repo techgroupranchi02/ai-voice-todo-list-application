@@ -4,62 +4,54 @@ import {
   Post,
   Body,
   Param,
+  Put,
   Delete,
-  Patch,
-  UseGuards,
-  Request,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { AuthGuard } from '../auth/guards/auth.guard';
+import { Task } from './entities/task.entity';
 
 @Controller('api/v1/tasks')
-@UseGuards(AuthGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  async create(@Body() createTaskDto: CreateTaskDto, @Request() req) {
-    const userId = req.user.id;
-    const task = await this.tasksService.create(createTaskDto, userId);
-    return {
-      success: true,
-      data: {
-        taskId: task.id,
-        message: 'Task created successfully.',
-      },
-    };
-  }
-
-  @Get()
-  async findAll(@Request() req) {
-    const userId = req.user.id;
-    const tasks = await this.tasksService.findAll(userId);
-    return {
-      success: true,
-      data: tasks,
-    };
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: number, @Request() req) {
-    const userId = req.user.id;
-    const task = await this.tasksService.findOne(id, userId);
+  async create(@Body() createTaskDto: CreateTaskDto): Promise<{ success: boolean; data: Task }> {
+    const task = await this.tasksService.create(createTaskDto);
     return {
       success: true,
       data: task,
     };
   }
 
-  @Patch(':id')
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean; data: Task }> {
+    const task = await this.tasksService.findOne(id);
+    return {
+      success: true,
+      data: task,
+    };
+  }
+
+  @Get()
+  async findAll(): Promise<{ success: boolean; data: Task[] }> {
+    // Note: This endpoint would typically require authentication
+    // and filter by current user's tasks. For now, returning all tasks.
+    const tasks = await this.tasksService.findAllByUserId(1); // Placeholder userId
+    return {
+      success: true,
+      data: tasks,
+    };
+  }
+
+  @Put(':id')
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateTaskDto: UpdateTaskDto,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    const task = await this.tasksService.update(id, updateTaskDto, userId);
+  ): Promise<{ success: boolean; data: Task }> {
+    const task = await this.tasksService.update(id, updateTaskDto);
     return {
       success: true,
       data: task,
@@ -67,14 +59,22 @@ export class TasksController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req) {
-    const userId = req.user.id;
-    await this.tasksService.remove(id, userId);
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<{ success: boolean; message: string }> {
+    await this.tasksService.remove(id);
     return {
       success: true,
-      data: {
-        message: 'Task deleted successfully.',
-      },
+      message: 'Task deleted successfully',
+    };
+  }
+
+  @Post(':id/toggle')
+  async toggleCompletion(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ success: boolean; data: Task }> {
+    const task = await this.tasksService.toggleCompletion(id);
+    return {
+      success: true,
+      data: task,
     };
   }
 }

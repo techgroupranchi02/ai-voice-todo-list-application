@@ -2,23 +2,61 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { VoiceService } from './voice.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { of, throwError } from 'rxjs';
-import { AxiosResponse } from 'axios';
+import { TasksService } from '../tasks/tasks.service';
+import { User } from '../auth/entities/user.entity';
+import { Task } from '../tasks/entities/task.entity';
 
 describe('VoiceService', () => {
   let service: VoiceService;
-  let configService: jest.Mocked<ConfigService>;
-  let httpService: jest.Mocked<HttpService>;
+  let mockConfigService: Partial<ConfigService>;
+  let mockHttpService: Partial<HttpService>;
+  let mockTasksService: Partial<TasksService>;
 
-  const mockConfigService = {
-    get: jest.fn(),
+  const mockUser: User = {
+    id: 1,
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    password: 'hashedPassword',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
-  const mockHttpService = {
-    post: jest.fn(),
+  const mockTask: Task = {
+    id: 1,
+    userId: 1,
+    title: 'Test Task',
+    description: 'Test Description',
+    dueDate: new Date(),
+    priority: 2,
+    category: 'Personal',
+    completed: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
+    mockConfigService = {
+      get: jest.fn((key: string) => {
+        switch (key) {
+          case 'OLLAMA_API_URL':
+            return 'http://localhost:11434';
+          case 'OLLAMA_MODEL':
+            return 'llama3';
+          default:
+            return null;
+        }
+      }),
+    };
+
+    mockHttpService = {
+      post: jest.fn(),
+    };
+
+    mockTasksService = {
+      createTask: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VoiceService,
@@ -30,174 +68,109 @@ describe('VoiceService', () => {
           provide: HttpService,
           useValue: mockHttpService,
         },
+        {
+          provide: TasksService,
+          useValue: mockTasksService,
+        },
       ],
     }).compile();
 
     service = module.get<VoiceService>(VoiceService);
-    configService = module.get(ConfigService);
-    httpService = module.get(HttpService);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('processAudio', () => {
-    const mockAudioData = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAf';
-    const mockTranscript = 'Hello world this is a test';
-
-    it('should process audio and return transcript', async () => {
-      const mockResponse: AxiosResponse = {
-        data: { transcript: mockTranscript },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {},
-      };
-
-      httpService.post.mockReturnValueOnce(of(mockResponse));
-
-      const result = await service.processAudio(mockAudioData);
-
-      expect(result).toEqual({ transcript: mockTranscript });
-      expect(httpService.post).toHaveBeenCalledWith(
-        expect.stringContaining('/transcribe'),
-        { audio: mockAudioData },
-        expect.any(Object)
-      );
-    });
-
-    it('should throw error when transcription fails', async () => {
-      httpService.post.mockReturnValueOnce(throwError(() => new Error('Transcription failed')));
-
-      await expect(service.processAudio(mockAudioData)).rejects.toThrow('Transcription failed');
-    });
-  });
-
-  describe('extractTaskFromTranscript', () => {
-    const mockTranscript = 'Create a task to finish the project by Friday';
-    const mockTask = {
-      title: 'Finish the project',
-      dueDate: 'Friday',
-      description: 'Complete all project tasks',
-    };
-
-    it('should extract task from transcript', async () => {
-      const mockResponse: AxiosResponse = {
-        data: { task: mockTask },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {},
-      };
-
-      httpService.post.mockReturnValueOnce(of(mockResponse));
-
-      const result = await service.extractTaskFromTranscript(mockTranscript);
-
-      expect(result).toEqual(mockTask);
-      expect(httpService.post).toHaveBeenCalledWith(
-        expect.stringContaining('/extract-task'),
-        { transcript: mockTranscript },
-        expect.any(Object)
-      );
-    });
-
-    it('should throw error when task extraction fails', async () => {
-      httpService.post.mockReturnValueOnce(throwError(() => new Error('Task extraction failed')));
-
-      await expect(service.extractTaskFromTranscript(mockTranscript)).rejects.toThrow('Task extraction failed');
-    });
-  });
-
   describe('processVoiceInput', () => {
-    const mockAudioData = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAf';
-    const mockTranscript = 'Hello world this is a test';
-    const mockTask = {
-      title: 'Finish the project',
-      dueDate: 'Friday',
-      description: 'Complete all project tasks',
-    };
+    it('should process voice input and create a task successfully', async () => {
+      const mockAudioData = 'base64data';
+      const mockTranscript = 'Create a meeting with the team at 3pm tomorrow';
+      
+      (mockHttpService.post as jest.Mock).mockImplementation(() => 
+        Promise.resolve({ data: { response: mockTranscript } })
+      );
+      
+      (mockTasksService.createTask as jest.Mock).mockImplementation(() => 
+        Promise.resolve(mockTask)
+      );
 
-    it('should process voice input and return task', async () => {
-      const mockTranscriptResponse: AxiosResponse = {
-        data: { transcript: mockTranscript },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {},
-      };
+      const result = await service.processVoiceInput(mockAudioData, mockUser);
 
-      const mockTaskResponse: AxiosResponse = {
-        data: { task: mockTask },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {},
-      };
-
-      httpService.post.mockReturnValueOnce(of(mockTranscriptResponse));
-      httpService.post.mockReturnValueOnce(of(mockTaskResponse));
-
-      const result = await service.processVoiceInput(mockAudioData);
-
-      expect(result).toEqual({
-        transcript: mockTranscript,
-        task: mockTask,
-      });
-      expect(httpService.post).toHaveBeenCalledTimes(2);
+      expect(result).toBe(mockTask);
+      expect(mockHttpService.post).toHaveBeenCalled();
+      expect(mockTasksService.createTask).toHaveBeenCalled();
     });
 
-    it('should throw error when audio processing fails', async () => {
-      httpService.post.mockReturnValueOnce(throwError(() => new Error('Audio processing failed')));
-
-      await expect(service.processVoiceInput(mockAudioData)).rejects.toThrow('Audio processing failed');
+    it('should throw BadRequestException for invalid audio data', async () => {
+      await expect(service.processVoiceInput(null, mockUser)).rejects.toThrow('Invalid audio data provided');
     });
   });
 
-  describe('validateAudioData', () => {
-    it('should validate valid audio data', () => {
-      const validAudioData = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAf';
-      expect(() => service.validateAudioData(validAudioData)).not.toThrow();
+  describe('transcribeAudio', () => {
+    it('should transcribe audio successfully', async () => {
+      const mockAudioData = 'base64data';
+      const mockTranscript = 'This is a test transcription';
+
+      (mockHttpService.post as jest.Mock).mockImplementation(() => 
+        Promise.resolve({ data: { response: mockTranscript } })
+      );
+
+      const result = await service['transcribeAudio'](mockAudioData);
+
+      expect(result).toBe(mockTranscript);
+      expect(mockHttpService.post).toHaveBeenCalled();
     });
 
-    it('should throw error for invalid audio data', () => {
-      const invalidAudioData = 'invalid-audio-data';
-      expect(() => service.validateAudioData(invalidAudioData)).toThrow('Invalid audio data format');
-    });
+    it('should handle data URI prefix correctly', async () => {
+      const mockAudioData = 'data:audio/wav;base64,base64data';
+      const mockTranscript = 'This is a test transcription';
 
-    it('should throw error for empty audio data', () => {
-      expect(() => service.validateAudioData('')).toThrow('Audio data is required');
+      (mockHttpService.post as jest.Mock).mockImplementation(() => 
+        Promise.resolve({ data: { response: mockTranscript } })
+      );
+
+      const result = await service['transcribeAudio'](mockAudioData);
+
+      expect(result).toBe(mockTranscript);
+      expect(mockHttpService.post).toHaveBeenCalled();
     });
   });
 
-  describe('calculateAudioSize', () => {
-    it('should calculate correct audio size', () => {
-      const audioData = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAf';
-      const size = service.calculateAudioSize(audioData);
-      expect(size).toBeGreaterThan(0);
+  describe('extractTaskDetails', () => {
+    it('should extract task details from transcript', () => {
+      const transcript = 'Buy milk and eggs at the grocery store. Need to complete this by tomorrow.';
+      
+      const result = service['extractTaskDetails'](transcript);
+
+      expect(result.title).toBe('Buy milk and eggs at the grocery store');
+      expect(result.description).toBe('Need to complete this by tomorrow.');
+      expect(result.priority).toBe(2);
+      expect(result.category).toBe('Personal');
     });
 
-    it('should handle base64 data without prefix', () => {
-      const audioData = 'UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAf';
-      const size = service.calculateAudioSize(audioData);
-      expect(size).toBeGreaterThan(0);
-    });
-  });
+    it('should detect high priority tasks', () => {
+      const transcript = 'This is an urgent task that needs to be completed immediately.';
+      
+      const result = service['extractTaskDetails'](transcript);
 
-  describe('isAudioTooLarge', () => {
-    it('should return false for audio within limit', () => {
-      const smallAudio = 'data:audio/wav;base64,' + 'A'.repeat(100000); // ~100KB
-      expect(service.isAudioTooLarge(smallAudio)).toBe(false);
+      expect(result.priority).toBe(1); // High
     });
 
-    it('should return true for audio exceeding limit', () => {
-      const largeAudio = 'data:audio/wav;base64,' + 'A'.repeat(10000000); // ~10MB
-      expect(service.isAudioTooLarge(largeAudio)).toBe(true);
+    it('should detect low priority tasks', () => {
+      const transcript = 'This is a low priority task that can be done later.';
+      
+      const result = service['extractTaskDetails'](transcript);
+
+      expect(result.priority).toBe(3); // Low
+    });
+
+    it('should detect category from transcript', () => {
+      const transcript = 'Schedule a work meeting with the team.';
+      
+      const result = service['extractTaskDetails'](transcript);
+
+      expect(result.category).toBe('Work');
     });
   });
 });

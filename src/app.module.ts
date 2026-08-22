@@ -3,32 +3,48 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
-import { UsersModule } from './users/users.module';
-import { User } from './users/entities/user.entity';
-import { Task } from './tasks/entities/task.entity';
+import { LoggerModule } from 'nestjs-pino';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    LoggerModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DB_HOST', '127.0.0.1'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USER', configService.get<string>('DB_USERNAME', 'postgres')),
-        password: configService.get<string>('DB_PASSWORD', 'password'),
-        database: configService.get<string>('DB_NAME', 'ai_voice_todo'),
-        entities: [User, Task],
-        synchronize: true,
+        host: configService.get('DB_HOST') || 'localhost',
+        port: configService.get<number>('DB_PORT') || 5432,
+        username: configService.get('DB_USER') || 'postgres',
+        password: configService.get('DB_PASSWORD') || 'postgres',
+        database: configService.get('DB_NAME') || 'jira_task_recreator',
+        autoLoadEntities: true,
+        synchronize: process.env.NODE_ENV !== 'production',
+        ssl: process.env.NODE_ENV === 'production' ? {
+          rejectUnauthorized: false
+        } : undefined,
       }),
+      inject: [ConfigService],
     }),
     AuthModule,
     TasksModule,
-    UsersModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,12 +1,7 @@
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateVoiceTaskDto {
   @IsNotEmpty()
+  @IsString()
   audioData: string;
-
-  @IsOptional()
-  transcript?: string;
-
-  @IsOptional()
-  title?: string;
 }

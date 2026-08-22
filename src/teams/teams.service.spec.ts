@@ -1,9 +1,8 @@
-// src/teams/teams.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeamsService } from './teams.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Task } from '../tasks/entities/task.entity';
-import { User } from '../users/entities/user.entity';
+import { User } from '../auth/entities/user.entity';
 import { NotFoundException } from '@nestjs/common';
 
 describe('TeamsService', () => {
@@ -12,20 +11,19 @@ describe('TeamsService', () => {
   let userRepository: any;
 
   const mockTask = {
-    id: '1',
+    id: 1,
     title: 'Test Task',
     description: 'Test Description',
-    userId: 'user1',
     dueDate: new Date(),
     priority: 1,
-    category: 'Personal',
     completed: false,
+    user: { id: 1 } as User,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   const mockUser = {
-    id: 'user1',
+    id: 1,
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
@@ -41,15 +39,15 @@ describe('TeamsService', () => {
         {
           provide: getRepositoryToken(Task),
           useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            findOne: jest.fn(),
+            save: jest.fn().mockResolvedValue(mockTask),
+            find: jest.fn().mockResolvedValue([mockTask]),
           },
         },
         {
           provide: getRepositoryToken(User),
           useValue: {
-            findOne: jest.fn(),
+            findOne: jest.fn().mockResolvedValue(mockUser),
+            save: jest.fn().mockResolvedValue(mockUser),
           },
         },
       ],
@@ -65,61 +63,36 @@ describe('TeamsService', () => {
   });
 
   describe('createTeamTask', () => {
-    it('should create and return a new task', async () => {
-      const taskData = {
-        title: 'Test Task',
-        description: 'Test Description',
-        assigneeId: 'user1',
-        dueDate: new Date(),
-        priority: 1,
-        category: 'Personal',
-      };
+    const createTaskDto = {
+      title: 'Test Task',
+      description: 'Test Description',
+      dueDate: new Date(),
+      priority: 1,
+      assigneeId: 2,
+    };
 
-      taskRepository.create.mockReturnValue(mockTask);
-      taskRepository.save.mockResolvedValue(mockTask);
-
-      const result = await service.createTeamTask('team1', taskData);
+    it('should create a team task successfully', async () => {
+      const result = await service.createTeamTask(1, createTaskDto, 1);
+      
       expect(result).toEqual(mockTask);
+      expect(taskRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when assignee is not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      
+      await expect(
+        service.createTeamTask(1, createTaskDto, 1),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('getTeamTasks', () => {
-    it('should return all tasks for a team', async () => {
-      taskRepository.find.mockResolvedValue([mockTask]);
-
-      const result = await service.getTeamTasks('team1');
+    it('should return team tasks successfully', async () => {
+      const result = await service.getTeamTasks(1, 1);
+      
       expect(result).toEqual([mockTask]);
-    });
-  });
-
-  describe('assignTaskToMember', () => {
-    it('should assign a task to a member', async () => {
-      taskRepository.findOne.mockResolvedValue(mockTask);
-      userRepository.findOne.mockResolvedValue(mockUser);
-      taskRepository.save.mockResolvedValue({
-        ...mockTask,
-        userId: 'user1',
-      });
-
-      const result = await service.assignTaskToMember('task1', 'user1');
-      expect(result).toEqual({ ...mockTask, userId: 'user1' });
-    });
-
-    it('should throw NotFoundException if task not found', async () => {
-      taskRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.assignTaskToMember('task1', 'user1'),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw NotFoundException if assignee not found', async () => {
-      taskRepository.findOne.mockResolvedValue(mockTask);
-      userRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.assignTaskToMember('task1', 'user1'),
-      ).rejects.toThrow(NotFoundException);
+      expect(taskRepository.find).toHaveBeenCalled();
     });
   });
 });

@@ -1,35 +1,47 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { json, urlencoded } from 'express';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    bodyParser: false,
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  
+  app.useLogger(app.get(Logger));
+  
+  // Enable CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
   });
 
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ extended: true, limit: '50mb' }));
+  // Security middleware
+  app.use(helmet());
 
-  app.use(helmet({ contentSecurityPolicy: false }));
-  app.useStaticAssets(join(process.cwd(), 'public'));
+  // Validation pipe
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-    }),
-  );
+  // Swagger setup
+  const config = new DocumentBuilder()
+    .setTitle('Jira Task Recreator API')
+    .setDescription('API documentation for the Jira Task Recreator application')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
-  app.enableCors({ origin: '*', credentials: true });
+  // Health check endpoint
+  app.get('/health').get(async () => ({ status: 'OK' }));
 
-  const port = process.env.PORT || 8000;
-  await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
-  logger.log(`Frontend Web UI available at: http://localhost:${port}/`);
+  await app.listen(process.env.PORT || 8000);
 }
 bootstrap();

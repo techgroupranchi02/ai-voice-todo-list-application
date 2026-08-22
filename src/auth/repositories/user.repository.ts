@@ -2,6 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ConflictException, InternalServerErrorException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -12,13 +13,13 @@ export class UserRepository extends Repository<User> {
     user.firstName = firstName;
     user.lastName = lastName;
     user.email = email;
-    user.password = password;
+    user.password = await bcrypt.hash(password, 10);
 
     try {
       return await user.save();
     } catch (error) {
       if (error.code === '23505') {
-        throw new ConflictException('An account with this email already exists.');
+        throw new ConflictException('User with this email already exists');
       } else {
         throw new InternalServerErrorException('Error creating user');
       }
@@ -33,13 +34,13 @@ export class UserRepository extends Repository<User> {
     return await this.findOne({ where: { id } });
   }
 
-  async updateUser(id: number, updateData: Partial<User>): Promise<User> {
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
     const user = await this.findUserById(id);
     if (!user) {
       throw new InternalServerErrorException('User not found');
     }
-    
-    Object.assign(user, updateData);
+
+    Object.assign(user, userData);
     return await user.save();
   }
 

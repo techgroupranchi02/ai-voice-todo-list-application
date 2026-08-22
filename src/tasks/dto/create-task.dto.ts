@@ -1,24 +1,24 @@
-import { IsNotEmpty, IsOptional, IsString, IsDate, IsNumber, IsIn } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsDateString, IsIn } from 'class-validator';
 
 export class CreateTaskDto {
-  @IsString()
   @IsNotEmpty()
+  @Column({ type: 'varchar', length: 255, nullable: false })
   title: string;
 
-  @IsString()
   @IsOptional()
-  description?: string;
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
-  @IsDate()
   @IsOptional()
-  dueDate?: Date;
+  @IsDateString()
+  @Column({ type: 'timestamp', nullable: true })
+  dueDate: Date;
 
-  @IsNumber()
-  @IsIn([1, 2, 3]) // High, Medium, Low priority
-  @IsOptional()
-  priority?: number;
+  @IsIn([0, 1, 2]) // 0 = High, 1 = Medium, 2 = Low
+  @Column({ type: 'int', nullable: false, default: 0 })
+  priority: number;
 
-  @IsString()
   @IsOptional()
-  category?: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  category: string;
 }

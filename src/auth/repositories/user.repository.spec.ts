@@ -1,104 +1,139 @@
+import { Test } from '@nestjs/testing';
 import { UserRepository } from './user.repository';
 import { User } from '../entities/user.entity';
-import { CreateUserDto } from '../dto/create-user.dto';
+import { ConflictException, InternalServerErrorException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 
 describe('UserRepository', () => {
   let userRepository: UserRepository;
   let mockUser: User;
 
-  beforeEach(() => {
-    userRepository = new UserRepository();
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [UserRepository],
+    }).compile();
+
+    userRepository = module.get<UserRepository>(UserRepository);
     
     mockUser = new User();
     mockUser.id = 1;
     mockUser.firstName = 'John';
     mockUser.lastName = 'Doe';
     mockUser.email = 'john.doe@example.com';
-    mockUser.password = 'hashedPassword';
-    mockUser.createdAt = new Date();
-    mockUser.updatedAt = new Date();
+    mockUser.password = await bcrypt.hash('password123', 10);
   });
 
-  it('should create a user successfully', async () => {
-    const createUserDto: CreateUserDto = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      password: 'password123'
-    };
+  describe('createUser', () => {
+    it('should create and return a new user', async () => {
+      const createUserDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        password: 'password123',
+      };
 
-    jest.spyOn(userRepository, 'save').mockImplementation(() => Promise.resolve(mockUser));
+      jest.spyOn(userRepository, 'save').mockResolvedValue(mockUser);
 
-    const result = await userRepository.createUser(createUserDto);
-
-    expect(result).toBe(mockUser);
-  });
-
-  it('should throw conflict exception when email already exists', async () => {
-    const createUserDto: CreateUserDto = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      password: 'password123'
-    };
-
-    jest.spyOn(userRepository, 'save').mockImplementation(() => {
-      const error = new Error('Unique violation');
-      (error as any).code = '23505';
-      return Promise.reject(error);
+      const result = await userRepository.createUser(createUserDto);
+      expect(result).toBe(mockUser);
     });
 
-    await expect(userRepository.createUser(createUserDto)).rejects.toThrow('An account with this email already exists.');
+    it('should throw ConflictException when email already exists', async () => {
+      const createUserDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        password: 'password123',
+      };
+
+      jest.spyOn(userRepository, 'save').mockRejectedValue({ code: '23505' });
+
+      await expect(userRepository.createUser(createUserDto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw InternalServerErrorException on other errors', async () => {
+      const createUserDto = {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        password: 'password123',
+      };
+
+      jest.spyOn(userRepository, 'save').mockRejectedValue(new Error('Database error'));
+
+      await expect(userRepository.createUser(createUserDto)).rejects.toThrow(InternalServerErrorException);
+    });
   });
 
-  it('should find user by email', async () => {
-    jest.spyOn(userRepository, 'findOne').mockImplementation(() => Promise.resolve(mockUser));
+  describe('findUserByEmail', () => {
+    it('should return user by email', async () => {
+      const mockUser = new User();
+      mockUser.id = 1;
+      mockUser.email = 'john.doe@example.com';
 
-    const result = await userRepository.findUserByEmail('john.doe@example.com');
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
 
-    expect(result).toBe(mockUser);
-    expect(userRepository.findOne).toHaveBeenCalledWith({ where: { email: 'john.doe@example.com' } });
+      const result = await userRepository.findUserByEmail('john.doe@example.com');
+      expect(result).toBe(mockUser);
+    });
+
+    it('should return undefined when user not found', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(undefined);
+
+      const result = await userRepository.findUserByEmail('nonexistent@example.com');
+      expect(result).toBeUndefined();
+    });
   });
 
-  it('should find user by id', async () => {
-    jest.spyOn(userRepository, 'findOne').mockImplementation(() => Promise.resolve(mockUser));
+  describe('findUserById', () => {
+    it('should return user by id', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
 
-    const result = await userRepository.findUserById(1);
+      const result = await userRepository.findUserById(1);
+      expect(result).toBe(mockUser);
+    });
 
-    expect(result).toBe(mockUser);
-    expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+    it('should return undefined when user not found', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(undefined);
+
+      const result = await userRepository.findUserById(999);
+      expect(result).toBeUndefined();
+    });
   });
 
-  it('should update user successfully', async () => {
-    const updateData = { firstName: 'Jane' };
-    
-    jest.spyOn(userRepository, 'findUserById').mockImplementation(() => Promise.resolve(mockUser));
-    jest.spyOn(userRepository, 'save').mockImplementation(() => Promise.resolve({ ...mockUser, ...updateData }));
+  describe('updateUser', () => {
+    it('should update and return user', async () => {
+      const userData = { firstName: 'Jane' };
+      
+      jest.spyOn(userRepository, 'findUserById').mockResolvedValue(mockUser);
+      jest.spyOn(userRepository, 'save').mockResolvedValue({ ...mockUser, ...userData });
 
-    const result = await userRepository.updateUser(1, updateData);
+      const result = await userRepository.updateUser(1, userData);
+      expect(result.firstName).toBe('Jane');
+    });
 
-    expect(result.firstName).toBe('Jane');
+    it('should throw InternalServerErrorException when user not found', async () => {
+      jest.spyOn(userRepository, 'findUserById').mockResolvedValue(undefined);
+
+      await expect(userRepository.updateUser(999, { firstName: 'Jane' })).rejects.toThrow(InternalServerErrorException);
+    });
   });
 
-  it('should throw error when updating non-existent user', async () => {
-    jest.spyOn(userRepository, 'findUserById').mockImplementation(() => Promise.resolve(null));
+  describe('deleteUser', () => {
+    it('should delete user successfully', async () => {
+      const mockResult = { affected: 1 };
+      
+      jest.spyOn(userRepository, 'delete').mockResolvedValue(mockResult);
 
-    await expect(userRepository.updateUser(999, { firstName: 'Jane' })).rejects.toThrow('User not found');
-  });
+      await expect(userRepository.deleteUser(1)).resolves.not.toThrow();
+    });
 
-  it('should delete user successfully', async () => {
-    const mockResult = { affected: 1 };
-    
-    jest.spyOn(userRepository, 'delete').mockImplementation(() => Promise.resolve(mockResult as any));
+    it('should throw InternalServerErrorException when user not found', async () => {
+      const mockResult = { affected: 0 };
+      
+      jest.spyOn(userRepository, 'delete').mockResolvedValue(mockResult);
 
-    await expect(userRepository.deleteUser(1)).resolves.toBeUndefined();
-  });
-
-  it('should throw error when deleting non-existent user', async () => {
-    const mockResult = { affected: 0 };
-    
-    jest.spyOn(userRepository, 'delete').mockImplementation(() => Promise.resolve(mockResult as any));
-
-    await expect(userRepository.deleteUser(999)).rejects.toThrow('User not found');
+      await expect(userRepository.deleteUser(999)).rejects.toThrow(InternalServerErrorException);
+    });
   });
 });

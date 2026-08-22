@@ -1,6 +1,6 @@
-# VoiceTaskManager
+# Jira Task Recreator
 
-> A voice-enabled task management application with AI transcription capabilities
+> AI-powered tool for recreating Jira tasks with enhanced task descriptions and requirements
 
 ## 📌 Table of Contents
 - [📖 About the Project](#-about-the-project)
@@ -25,48 +25,47 @@
 - [⭐ Support](#-support)
 
 ## 📖 About the Project
-VoiceTaskManager is a modern task management application that leverages voice recognition and AI transcription to create tasks through natural speech. Users can speak their tasks, which are automatically transcribed and converted into actionable items in the system. The application features real-time updates, task completion tracking, and seamless integration with AI-powered transcription services.
+The Jira Task Recreator is an AI-powered solution that helps software development teams efficiently recreate and enhance Jira tasks. By leveraging advanced language models, it transforms basic task descriptions into comprehensive requirements with clear acceptance criteria, estimated effort, and related dependencies.
+
+This tool addresses common challenges in task management where developers often struggle with incomplete or ambiguous task descriptions, leading to rework and delays. The system automatically analyzes existing tasks and generates enhanced versions that include all necessary details for successful implementation.
 
 ## ✨ Features
-- 🎤 **Voice Task Creation** - Create tasks using voice commands with real-time transcription
-- 🧠 **AI Transcription** - Automatic speech-to-text conversion using Ollama AI
-- 📋 **Task Management** - Complete task lifecycle with status tracking and updates
-- 🔁 **Real-time Updates** - WebSocket-powered live task synchronization
-- 🔐 **Secure Authentication** - JWT-based authentication with refresh token rotation
-- 📊 **Task Analytics** - Progress tracking and productivity insights
-- 🌐 **Cross-platform Support** - Mobile-first responsive design with React Native
-- 🛡️ **Security Features** - Rate limiting, input validation, and secure token handling
+- 🤖 **AI-Powered Task Enhancement** - Automatically enriches task descriptions with detailed requirements and acceptance criteria
+- 🔍 **Smart Task Analysis** - Analyzes existing Jira tasks to identify missing information and gaps
+- 📊 **Effort Estimation** - Provides estimated effort calculations for tasks using AI models
+- 🔄 **Task Recreation** - Recreates tasks with improved clarity and completeness
+- 📁 **Multi-Format Support** - Handles various task formats including plain text, markdown, and structured data
+- 🔐 **Secure Authentication** - Implements JWT-based authentication with refresh token rotation
+- 📈 **Real-time Collaboration** - Supports real-time updates and collaboration features
+- 🛡️ **Comprehensive Security** - Includes security middleware for protection against common threats
 
 ## 🛠️ Tech Stack
+
 ### Backend
 - **Framework**: NestJS (Node.js)
 - **Language**: TypeScript
 - **Database**: PostgreSQL
 - **Cache**: Redis
-- **Authentication**: JWT with Passport.js
-- **AI Integration**: Ollama API for transcription
-- **Real-time**: WebSocket/Socket.IO
+- **Authentication**: JWT with refresh tokens
+- **AI Integration**: Ollama API for language model processing
 
 ### Frontend
 - **Framework**: React Native (TypeScript)
-- **UI Library**: React Native Elements
-- **State Management**: Redux Toolkit
-- **Navigation**: React Navigation
-- **Audio Handling**: React Native Voice
+- **UI Library**: React Native components
+- **State Management**: React hooks and context API
 
 ### Database
-- **Primary DB**: PostgreSQL with TypeORM
-- **Cache**: Redis for session and rate limiting
+- **Primary**: PostgreSQL
+- **Cache**: Redis
 
 ### AI/Automation
-- **Transcription**: Ollama (Llama3 model)
-- **NLP**: Natural language processing for task extraction
+- **Language Models**: Ollama API
+- **Task Processing**: AI-powered task enhancement algorithms
 
 ### DevOps
-- **Build Tool**: Nest CLI, Webpack
+- **Containerization**: Docker
+- **Build Tools**: Nest CLI, TypeScript compiler
 - **Testing**: Jest, Supertest
-- **Linting**: ESLint, Prettier
-- **Version Control**: Git with Husky hooks
-- **Deployment**: Docker, PM2 (optional)
+- **Code Quality**: ESLint, Prettier, Husky
 
 ## 📂 Project Structure

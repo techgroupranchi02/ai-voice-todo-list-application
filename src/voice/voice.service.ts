@@ -1,59 +1,72 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
-import { Task } from '../tasks/entities/task.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../users/entities/user.entity';
+import { Injectable, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { Task } from '../tasks/entities/task.entity';
+import { TasksService } from '../tasks/tasks.service';
+import { User } from '../auth/entities/user.entity';
 
 @Injectable()
 export class VoiceService {
   private readonly logger = new Logger(VoiceService.name);
+  private readonly ollamaApiUrl: string;
+  private readonly ollamaModel: string;
 
   constructor(
-    @InjectRepository(Task)
-    private taskRepository: Repository<Task>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private httpService: HttpService,
-  ) {}
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+    private readonly tasksService: TasksService,
+  ) {
+    this.ollamaApiUrl = this.configService.get<string>('OLLAMA_API_URL');
+    this.ollamaModel = this.configService.get<string>('OLLAMA_MODEL');
+  }
 
-  async createTaskFromVoice(createVoiceTaskDto: CreateVoiceTaskDto, userId: number): Promise<{ taskId: string; message: string }> {
+  /**
+   * Process voice input and create a task
+   * @param audioData Base64 encoded audio data
+   * @param user The authenticated user
+   * @returns Created task
+   */
+  async processVoiceInput(audioData: string, user: User): Promise<Task> {
     try {
-      // Step 1: Process audio data (convert base64 to text using AI service)
-      const transcript = await this.processAudioData(createVoiceTaskDto.audioData);
+      this.logger.log('Processing voice input for user: ' + user.id);
       
-      // Step 2: Extract task details from the transcript
-      const taskDetails = this.extractTaskDetails(transcript);
-      
-      // Step 3: Create the task in database
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-      if (!user) {
-        throw new Error('User not found');
+      // Validate audio data
+      if (!audioData || typeof audioData !== 'string') {
+        throw new BadRequestException('Invalid audio data provided');
       }
 
-      const task = this.taskRepository.create({
-        ...taskDetails,
-        user,
-        completed: false,
-      });
-
-      const savedTask = await this.taskRepository.save(task);
+      // Convert audio to text using Ollama AI
+      const transcript = await this.transcribeAudio(audioData);
       
-      return {
-        taskId: savedTask.id.toString(),
-        message: 'Task created from voice input successfully.',
-      };
+      // Extract task details from transcript
+      const taskDetails = this.extractTaskDetails(transcript);
+      
+      // Create task with extracted details
+      const createdTask = await this.tasksService.createTask({
+        title: taskDetails.title || 'Voice Task',
+        description: taskDetails.description,
+        dueDate: taskDetails.dueDate,
+        priority: taskDetails.priority,
+        category: taskDetails.category,
+      }, user);
+
+      this.logger.log('Voice input processed successfully for user: ' + user.id);
+      return createdTask;
     } catch (error) {
-      this.logger.error('Error creating task from voice:', error);
-      throw new Error('Error processing the audio data.');
+      this.logger.error('Error processing voice input: ' + error.message);
+      throw new InternalServerErrorException('Error processing the audio data');
     }
   }
 
-  private async processAudioData(audioData: string): Promise<string> {
+  /**
+   * Transcribe audio to text using Ollama AI
+   * @param audioData Base64 encoded audio data
+   * @returns Transcribed text
+   */
+  private async transcribeAudio(audioData: string): Promise<string> {
     try {
-      // Remove base64 prefix if present
+      // Remove data URI prefix if present
       let base64Data = audioData;
       if (audioData.startsWith('data:')) {
         const base64Index = audioData.indexOf('base64,');
@@ -62,70 +75,77 @@ export class VoiceService {
         }
       }
 
-      // In a real implementation, this would call an AI service like Ollama or Whisper
-      // For now, we'll simulate the processing by returning a mock transcript
-      // This is where you'd integrate with your actual audio-to-text service
-      
-      // Simulate API call to AI service
+      // Prepare the request to Ollama API
+      const requestBody = {
+        model: this.ollamaModel,
+        prompt: `Transcribe the following speech into clear, structured text: ${base64Data}`,
+        stream: false,
+      };
+
       const response = await firstValueFrom(
-        this.httpService.post(process.env.OLLAMA_API_URL || 'http://localhost:11434/api/generate', {
-          model: 'whisper',
-          prompt: base64Data,
-        }),
+        this.httpService.post(`${this.ollamaApiUrl}/api/generate`, requestBody),
       );
 
-      return response.data.response || 'Task created for grocery shopping';
+      // Extract the transcribed text from the response
+      const transcript = response.data.response || '';
+      
+      if (!transcript.trim()) {
+        throw new InternalServerErrorException('No transcription received from AI service');
+      }
+
+      this.logger.log('Audio transcribed successfully');
+      return transcript;
     } catch (error) {
-      this.logger.error('Error processing audio data:', error);
-      // For now, we'll return a default transcript to simulate success
-      return 'Task created for grocery shopping';
+      this.logger.error('Error in audio transcription: ' + error.message);
+      throw new InternalServerErrorException('Error processing the audio data');
     }
   }
 
-  private extractTaskDetails(transcript: string): Partial<Task> {
-    // This is a simplified implementation of NLU extraction
-    // In a real-world scenario, you'd use more sophisticated NLP techniques
+  /**
+   * Extract task details from transcribed text
+   * @param transcript Transcribed text
+   * @returns Task details object
+   */
+  private extractTaskDetails(transcript: string): any {
+    // This is a simplified implementation
+    // In a real application, this would use more sophisticated NLP techniques
     
-    const taskDetails: Partial<Task> = {};
-    
-    // Extract title (first noun or verb phrase)
-    if (transcript.includes('task') || transcript.includes('create')) {
-      taskDetails.title = transcript.split(' ').slice(0, 5).join(' ') || 'Voice Task';
-    } else {
-      taskDetails.title = transcript.substring(0, 100) || 'Voice Task';
+    const taskDetails = {
+      title: '',
+      description: '',
+      dueDate: null,
+      priority: 2, // Medium by default
+      category: 'Personal',
+    };
+
+    // Extract title (first sentence or phrase)
+    const sentences = transcript.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 0);
+    if (sentences.length > 0) {
+      taskDetails.title = sentences[0].replace(/^[^a-zA-Z0-9]*/, '').substring(0, 255);
     }
-    
-    // Extract description
-    taskDetails.description = transcript;
-    
-    // Extract priority (simplified)
-    if (transcript.includes('urgent') || transcript.includes('important')) {
-      taskDetails.priority = 1; // High priority
-    } else if (transcript.includes('later') || transcript.includes('maybe')) {
-      taskDetails.priority = 3; // Low priority
-    } else {
-      taskDetails.priority = 2; // Medium priority
+
+    // Extract description from remaining text
+    if (sentences.length > 1) {
+      taskDetails.description = sentences.slice(1).join(' ').trim();
     }
-    
-    // Extract due date (simplified)
-    const today = new Date();
-    if (transcript.includes('tomorrow')) {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      taskDetails.dueDate = tomorrow;
-    } else if (transcript.includes('today')) {
-      taskDetails.dueDate = today;
+
+    // Simple keyword-based priority detection
+    const lowerTranscript = transcript.toLowerCase();
+    if (lowerTranscript.includes('urgent') || lowerTranscript.includes('immediate')) {
+      taskDetails.priority = 1; // High
+    } else if (lowerTranscript.includes('low') || lowerTranscript.includes('minor')) {
+      taskDetails.priority = 3; // Low
     }
-    
-    // Extract category
-    if (transcript.includes('work') || transcript.includes('project')) {
-      taskDetails.category = 'Work';
-    } else if (transcript.includes('personal') || transcript.includes('home')) {
-      taskDetails.category = 'Personal';
-    } else {
-      taskDetails.category = 'General';
+
+    // Simple category detection
+    const categories = ['work', 'personal', 'shopping', 'health', 'finance'];
+    for (const category of categories) {
+      if (lowerTranscript.includes(category)) {
+        taskDetails.category = category.charAt(0).toUpperCase() + category.slice(1);
+        break;
+      }
     }
-    
+
     return taskDetails;
   }
 }

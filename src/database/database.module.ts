@@ -1,24 +1,32 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { Task } from './entities/task.entity';
-import { Category } from './entities/category.entity';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT) || 5432,
-      username: process.env.DB_USER || 'voice_user',
-      password: process.env.DB_PASSWORD || 'voice_password',
-      database: process.env.DB_NAME || 'voice_assistant_db',
-      entities: [User, Task, Category],
-      synchronize: false, // Should be false in production
-      logging: false,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+        synchronize: false, // Should be false in production
+        logging: false,
+        poolSize: 10,
+        ssl: configService.get<boolean>('DB_SSL'),
+        extra: {
+          max: 20,
+          min: 5,
+          acquireTimeoutMillis: 30000,
+          idleTimeoutMillis: 30000,
+        },
+      }),
+      inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Task, Category]),
   ],
-  exports: [TypeOrmModule],
 })
 export class DatabaseModule {}

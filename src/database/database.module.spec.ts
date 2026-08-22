@@ -1,4 +1,3 @@
-// src/database/database.module.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { DatabaseModule } from './database.module';
 

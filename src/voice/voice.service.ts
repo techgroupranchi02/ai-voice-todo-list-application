@@ -1,151 +1,127 @@
-import { Injectable, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Task } from '../tasks/entities/task.entity';
-import { TasksService } from '../tasks/tasks.service';
-import { User } from '../auth/entities/user.entity';
+import { TaskRepository } from '../tasks/repositories/task.repository';
+import { CreateTaskDto } from '../tasks/dto/create-task.dto';
 
 @Injectable()
 export class VoiceService {
   private readonly logger = new Logger(VoiceService.name);
-  private readonly ollamaApiUrl: string;
-  private readonly ollamaModel: string;
+  private readonly ollamaBaseUrl: string;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-    private readonly tasksService: TasksService,
+    private readonly taskRepository: TaskRepository,
   ) {
-    this.ollamaApiUrl = this.configService.get<string>('OLLAMA_API_URL');
-    this.ollamaModel = this.configService.get<string>('OLLAMA_MODEL');
+    this.ollamaBaseUrl = this.configService.get<string>('OLLAMA_BASE_URL') || 'http://localhost:11434';
   }
 
   /**
    * Process voice input and create a task
    * @param audioData Base64 encoded audio data
-   * @param user The authenticated user
-   * @returns Created task
+   * @param userId User ID of the requester
+   * @returns Task creation result
    */
-  async processVoiceInput(audioData: string, user: User): Promise<Task> {
+  async processVoiceInput(audioData: string, userId: number): Promise<{ taskId: number; message: string }> {
     try {
-      this.logger.log('Processing voice input for user: ' + user.id);
+      // Step 1: Convert audio to text using Ollama (speech-to-text)
+      const transcript = await this.convertAudioToText(audioData);
       
-      // Validate audio data
-      if (!audioData || typeof audioData !== 'string') {
-        throw new BadRequestException('Invalid audio data provided');
-      }
-
-      // Convert audio to text using Ollama AI
-      const transcript = await this.transcribeAudio(audioData);
+      // Step 2: Extract task details from the transcript
+      const taskDetails = await this.extractTaskDetails(transcript);
       
-      // Extract task details from transcript
-      const taskDetails = this.extractTaskDetails(transcript);
-      
-      // Create task with extracted details
-      const createdTask = await this.tasksService.createTask({
+      // Step 3: Create task in database
+      const createTaskDto: CreateTaskDto = {
+        userId,
         title: taskDetails.title || 'Voice Task',
         description: taskDetails.description,
         dueDate: taskDetails.dueDate,
-        priority: taskDetails.priority,
+        priority: taskDetails.priority || 0,
         category: taskDetails.category,
-      }, user);
+      };
 
-      this.logger.log('Voice input processed successfully for user: ' + user.id);
-      return createdTask;
+      const task = await this.taskRepository.createTask(createTaskDto);
+      
+      return {
+        taskId: task.id,
+        message: 'Task created from voice input successfully.',
+      };
     } catch (error) {
-      this.logger.error('Error processing voice input: ' + error.message);
-      throw new InternalServerErrorException('Error processing the audio data');
+      this.logger.error(`Error processing voice input: ${error.message}`);
+      throw error;
     }
   }
 
   /**
-   * Transcribe audio to text using Ollama AI
+   * Convert audio data to text using Ollama
    * @param audioData Base64 encoded audio data
    * @returns Transcribed text
    */
-  private async transcribeAudio(audioData: string): Promise<string> {
+  private async convertAudioToText(audioData: string): Promise<string> {
     try {
       // Remove data URI prefix if present
-      let base64Data = audioData;
-      if (audioData.startsWith('data:')) {
-        const base64Index = audioData.indexOf('base64,');
-        if (base64Index !== -1) {
-          base64Data = audioData.substring(base64Index + 7);
-        }
-      }
-
-      // Prepare the request to Ollama API
-      const requestBody = {
-        model: this.ollamaModel,
-        prompt: `Transcribe the following speech into clear, structured text: ${base64Data}`,
-        stream: false,
-      };
-
+      const base64Data = audioData.replace(/^data:audio\/\w+;base64,/, '');
+      
+      // Call Ollama API for speech-to-text conversion
       const response = await firstValueFrom(
-        this.httpService.post(`${this.ollamaApiUrl}/api/generate`, requestBody),
+        this.httpService.post(`${this.ollamaBaseUrl}/api/generate`, {
+          model: 'whisper',
+          prompt: base64Data,
+          stream: false,
+        }),
       );
 
-      // Extract the transcribed text from the response
-      const transcript = response.data.response || '';
-      
-      if (!transcript.trim()) {
-        throw new InternalServerErrorException('No transcription received from AI service');
-      }
-
-      this.logger.log('Audio transcribed successfully');
-      return transcript;
+      return response.data.response || '';
     } catch (error) {
-      this.logger.error('Error in audio transcription: ' + error.message);
-      throw new InternalServerErrorException('Error processing the audio data');
+      this.logger.error(`Error converting audio to text: ${error.message}`);
+      throw new NotFoundException('Error processing the audio data.');
     }
   }
 
   /**
-   * Extract task details from transcribed text
-   * @param transcript Transcribed text
-   * @returns Task details object
+   * Extract task details from transcript using AI
+   * @param transcript Text transcription
+   * @returns Extracted task details
    */
-  private extractTaskDetails(transcript: string): any {
-    // This is a simplified implementation
-    // In a real application, this would use more sophisticated NLP techniques
-    
-    const taskDetails = {
-      title: '',
-      description: '',
-      dueDate: null,
-      priority: 2, // Medium by default
-      category: 'Personal',
-    };
+  private async extractTaskDetails(transcript: string): Promise<any> {
+    try {
+      // Call Ollama API to analyze the transcript and extract task details
+      const response = await firstValueFrom(
+        this.httpService.post(`${this.ollamaBaseUrl}/api/generate`, {
+          model: 'llama3',
+          prompt: `Extract task details from this voice input: "${transcript}". Return a JSON object with title, description, dueDate (ISO format or null), priority (0=High, 1=Medium, 2=Low or null), and category (string or null).`,
+          stream: false,
+        }),
+      );
 
-    // Extract title (first sentence or phrase)
-    const sentences = transcript.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 0);
-    if (sentences.length > 0) {
-      taskDetails.title = sentences[0].replace(/^[^a-zA-Z0-9]*/, '').substring(0, 255);
-    }
-
-    // Extract description from remaining text
-    if (sentences.length > 1) {
-      taskDetails.description = sentences.slice(1).join(' ').trim();
-    }
-
-    // Simple keyword-based priority detection
-    const lowerTranscript = transcript.toLowerCase();
-    if (lowerTranscript.includes('urgent') || lowerTranscript.includes('immediate')) {
-      taskDetails.priority = 1; // High
-    } else if (lowerTranscript.includes('low') || lowerTranscript.includes('minor')) {
-      taskDetails.priority = 3; // Low
-    }
-
-    // Simple category detection
-    const categories = ['work', 'personal', 'shopping', 'health', 'finance'];
-    for (const category of categories) {
-      if (lowerTranscript.includes(category)) {
-        taskDetails.category = category.charAt(0).toUpperCase() + category.slice(1);
-        break;
+      const result = response.data.response || '';
+      
+      // Try to parse the JSON from the response
+      try {
+        return JSON.parse(result);
+      } catch {
+        // If parsing fails, return a default structure with the transcript as title
+        return {
+          title: transcript.substring(0, 100) + (transcript.length > 100 ? '...' : ''),
+          description: transcript,
+          dueDate: null,
+          priority: null,
+          category: null,
+        };
       }
+    } catch (error) {
+      this.logger.error(`Error extracting task details: ${error.message}`);
+      
+      // Return default structure if AI processing fails
+      return {
+        title: transcript.substring(0, 100) + (transcript.length > 100 ? '...' : ''),
+        description: transcript,
+        dueDate: null,
+        priority: null,
+        category: null,
+      };
     }
-
-    return taskDetails;
   }
 }

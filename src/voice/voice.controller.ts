@@ -1,20 +1,32 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { VoiceService } from './voice.service';
-import { CreateVoiceTaskDto } from './dto/create-voice-task.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { User } from '../auth/entities/user.entity';
 
 @Controller('tasks')
-@UseGuards(AuthGuard('jwt'))
 export class VoiceController {
   constructor(private readonly voiceService: VoiceService) {}
 
   @Post('voice')
-  async createFromVoice(@Body() createVoiceTaskDto: CreateVoiceTaskDto, @Request() req) {
-    const userId = req.user.id;
-    const result = await this.voiceService.createTaskFromVoice(createVoiceTaskDto, userId);
+  @UseGuards(AuthGuard)
+  async createTaskFromVoice(
+    @Body() body: { audioData: string },
+    @Request() req,
+  ) {
+    const user: User = req.user;
+    
+    if (!body.audioData) {
+      throw new Error('Audio data is required');
+    }
+
+    const createdTask = await this.voiceService.processVoiceInput(body.audioData, user);
+    
     return {
       success: true,
-      data: result,
+      data: {
+        taskId: createdTask.id,
+        message: 'Task created from voice input successfully.',
+      },
     };
   }
 }
